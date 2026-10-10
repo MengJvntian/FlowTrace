@@ -1,0 +1,20 @@
+# Portable sample only. Generate real per-application entries via application-routing prepare/apply.
+# BEGIN managed application Gateway routes
+- insert:
+    - id: mcp-trace-mail
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: mail
+        transport: streamable-http
+        url: 'http://127.0.0.1:8790/dsh/mail/mcp'
+        failOnStartupError: false
+        toolCallTimeoutMs: 120000
+    - id: mcp-trace-calendar-mock
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: calendar-mock
+        transport: streamable-http
+        url: 'http://127.0.0.1:8790/dsh/calendar-mock/mcp'
+        failOnStartupError: false
+        toolCallTimeoutMs: 120000
+# END managed application Gateway routes

@@ -1,0 +1,21 @@
+{
+  "id": "feishu",
+  "name": "飞书",
+  "status": "verified",
+  "upstream": {
+    "serverName": "feishu",
+    "upstreamApp": "feishu",
+    "gatewayId": "gw-feishu",
+    "path": "/feishu/mcp",
+    "command": "node",
+    "args": [
+      "tools/node.js",
+      "tools/feishu-mcp.js"
+    ],
+    "env": {
+      "FEISHU_APP_ID": "${FEISHU_APP_ID}",
+      "FEISHU_APP_SECRET": "${FEISHU_APP_SECRET}",
+      "FEISHU_DOMAIN": "${FEISHU_DOMAIN}"
+    }
+  }
+}

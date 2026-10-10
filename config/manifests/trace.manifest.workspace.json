@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "_readme": "Google Drive、Docs 与 Sheets 的清单示例。使用前配置所需账户和环境变量，并明确指定 --manifest。",
+  "_httpUpstreamExample": {
+    "_说明": "远端 Streamable HTTP 上游（例如 Google Workspace 官方 MCP）长这样：transport=streamable-http + url + headers。headers 的值支持环境变量引用（写 `$` 加 `{VAR}`，示例见下），且**头的值绝不写入事件库/日志/证据**（事件里只记头名与 <redacted>）。引用的变量没设置会直接报配置错误（不会用空串继续）。",
+    "serverName": "gmail",
+    "upstreamApp": "google-gmail",
+    "transport": "streamable-http",
+    "url": "https://gmailmcp.googleapis.com/mcp/v1",
+    "headers": {
+      "Authorization": "Bearer ${GOOGLE_ACCESS_TOKEN}"
+    }
+  },
+  "experimentRunId": "exp_manifest_demo",
+  "clientLabel": "deepseek_harness",
+  "db": "demo-data/events.db",
+  "http": {
+    "host": "127.0.0.1",
+    "port": 8790
+  },
+  "upstreams": [
+    {
+      "serverName": "mail",
+      "upstreamApp": "mock-mail",
+      "gatewayId": "gw-mail",
+      "transport": "stdio",
+      "path": "/mail/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_mail.js"
+      ],
+      "cwd": "."
+    },
+    {
+      "_说明": "Mock Calendar（演练靶子）—— 2026-10-05 起 `calendar` 这个名字让给**真实** Google Calendar，因此本条改名 `calendar-mock`、路径 /calendar-mock/mcp。`upstreamApp` 仍是 `mock-calendar`：那是「应用身份」，被血缘工具策略（src/lineage/tools.js 的 mock-calendar/create_event=write）与既有测试夹具引用，改成别的会大范围震荡。想跑 Mock 演示时把客户端指向 /calendar-mock/mcp 即可。",
+      "serverName": "calendar-mock",
+      "upstreamApp": "mock-calendar",
+      "gatewayId": "gw-calendar-mock",
+      "transport": "stdio",
+      "path": "/calendar-mock/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_calendar.js",
+        "--store",
+        "demo-data/demo/calendar-events.json"
+      ],
+      "cwd": "."
+    },
+    {
+      "_说明": "真实 Google（A 路线）：command/args 是 uvx workspace-mcp 的 stdio 上游。凭据走**引用式**，不写死明文：`env` 的 `${VAR}` 从启动进程环境解析（未设置 = 配置错误 exit 2，绝不用空串继续）；`envFromFile` 从文件读（适合把密钥放在 %LOCALAPPDATA% 等用户目录，不进仓库）。**为什么必须写在清单里**：MCP SDK 的 stdio 客户端只继承 12 个白名单环境变量（APPDATA/HOMEDRIVE/HOMEPATH/LOCALAPPDATA/PATH/PROCESSOR_ARCHITECTURE/SYSTEMDRIVE/SYSTEMROOT/TEMP/USERNAME/USERPROFILE/PROGRAMFILES），GOOGLE_OAUTH_CLIENT_* 不在其中，所以「终端里 set 一下就期望上游收到」是不成立的。用法：`set GOOGLE_OAUTH_CLIENT_ID=...` + `set GOOGLE_OAUTH_CLIENT_SECRET=...` 后 `npm start`。envFromFile 里的 optional:true 只是让本示例清单在没配密钥的机器上仍能加载；真正要用时请去掉 optional，以便尽早报错。",
+      "serverName": "gmail",
+      "upstreamApp": "google-gmail",
+      "gatewayId": "gw-gmail",
+      "transport": "stdio",
+      "path": "/gmail/mcp",
+      "command": "uvx",
+      "args": [
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "gmail"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-gmail"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "真实 Google Calendar（A 路线）—— 与上面 gmail 是**同一个 workspace-mcp 的另一个实例**，--tools 换成 calendar。为什么必须是两个实例：网关要求「一个上游一个路径」（manifest 会拒绝路径冲突），而客户端侧要按应用分别取名（mcp__gmail__* 读、mcp__calendar__* 写），血缘也才能区分源与宿。**关键：两个实例必须各用独立的凭据目录** —— workspace-mcp 按 `--tools`（scopes.py 的 TOOL_SCOPES_MAP）决定要请求哪些 scope，而它默认把令牌写进同一个 `~/.google_workspace_mcp/credentials/<邮箱>.json`；于是 gmail 实例写的 scope 不满足 calendar 实例 → 后者覆盖 → 前者又不满足 → **无限来回要求重新授权**（2026-10-05 实测）。用 WORKSPACE_MCP_CREDENTIALS_DIR 分目录后各自稳定（代价：两个实例各授权一次）。本条目占用 `calendar` 这个名字，因此 `mcp__calendar__*` 与浏览器页面上的「calendar」指的就是**真实** Google Calendar。",
+      "serverName": "calendar",
+      "upstreamApp": "google-calendar",
+      "gatewayId": "gw-google-calendar",
+      "transport": "stdio",
+      "path": "/calendar/mcp",
+      "command": "uvx",
+      "args": [
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "calendar"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-calendar"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "接入准备；必须先核对账户授权和真实工具列表。不会自动启用。",
+      "serverName": "drive",
+      "upstreamApp": "google-drive",
+      "gatewayId": "gw-google-drive",
+      "transport": "stdio",
+      "path": "/drive/mcp",
+      "command": "uvx",
+      "args": [
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "drive"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-drive"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "接入准备；必须先核对账户授权和真实工具列表。不会自动启用。",
+      "serverName": "docs",
+      "upstreamApp": "google-docs",
+      "gatewayId": "gw-google-docs",
+      "transport": "stdio",
+      "path": "/docs/mcp",
+      "command": "uvx",
+      "args": [
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "docs"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-docs"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "接入准备；必须先核对账户授权和真实工具列表。不会自动启用。",
+      "serverName": "sheets",
+      "upstreamApp": "google-sheets",
+      "gatewayId": "gw-google-sheets",
+      "transport": "stdio",
+      "path": "/sheets/mcp",
+      "command": "uvx",
+      "args": [
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "sheets"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-sheets"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    }
+  ]
+}

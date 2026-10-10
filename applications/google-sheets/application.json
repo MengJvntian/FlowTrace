@@ -1,0 +1,40 @@
+{
+  "id": "google-sheets",
+  "name": "Google Sheets",
+  "status": "verified",
+  "upstream": {
+    "serverName": "sheets",
+    "upstreamApp": "google-sheets",
+    "gatewayId": "gw-google-sheets",
+    "transport": "stdio",
+    "path": "/sheets/mcp",
+    "command": "uvx",
+    "args": [
+      "--offline",
+      "--from",
+      "workspace-mcp==2.0.1",
+      "workspace-mcp",
+      "--single-user",
+      "--transport",
+      "stdio",
+      "--tools",
+      "sheets"
+    ],
+    "cwd": ".",
+    "env": {
+      "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+      "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+      "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-sheets"
+    },
+    "envOptional": [
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET"
+    ],
+    "envFromFile": {
+      "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+        "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+        "optional": true
+      }
+    }
+  }
+}

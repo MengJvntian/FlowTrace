@@ -1,0 +1,40 @@
+{
+  "id": "google-gmail",
+  "name": "Gmail",
+  "status": "verified",
+  "upstream": {
+    "serverName": "gmail",
+    "upstreamApp": "google-gmail",
+    "gatewayId": "gw-gmail",
+    "transport": "stdio",
+    "path": "/gmail/mcp",
+    "command": "uvx",
+    "args": [
+      "--offline",
+      "--from",
+      "workspace-mcp==2.0.1",
+      "workspace-mcp",
+      "--single-user",
+      "--transport",
+      "stdio",
+      "--tools",
+      "gmail"
+    ],
+    "cwd": ".",
+    "env": {
+      "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+      "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+      "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-gmail"
+    },
+    "envOptional": [
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET"
+    ],
+    "envFromFile": {
+      "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+        "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+        "optional": true
+      }
+    }
+  }
+}

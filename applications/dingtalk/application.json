@@ -1,0 +1,20 @@
+{
+  "id": "dingtalk",
+  "name": "钉钉",
+  "status": "verified",
+  "upstream": {
+    "serverName": "dingtalk",
+    "upstreamApp": "dingtalk",
+    "gatewayId": "gw-dingtalk",
+    "path": "/dingtalk/mcp",
+    "command": "node",
+    "args": [
+      "tools/node.js",
+      "applications/dingtalk/server.js"
+    ],
+    "env": {
+      "DINGTALK_Client_ID": "${DINGTALK_CLIENT_ID}",
+      "DINGTALK_Client_Secret": "${DINGTALK_CLIENT_SECRET}"
+    }
+  }
+}

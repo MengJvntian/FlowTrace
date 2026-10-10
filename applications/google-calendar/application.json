@@ -1,0 +1,40 @@
+{
+  "id": "google-calendar",
+  "name": "Google 日历",
+  "status": "verified",
+  "upstream": {
+    "serverName": "calendar",
+    "upstreamApp": "google-calendar",
+    "gatewayId": "gw-google-calendar",
+    "transport": "stdio",
+    "path": "/calendar/mcp",
+    "command": "uvx",
+    "args": [
+      "--offline",
+      "--from",
+      "workspace-mcp==2.0.1",
+      "workspace-mcp",
+      "--single-user",
+      "--transport",
+      "stdio",
+      "--tools",
+      "calendar"
+    ],
+    "cwd": ".",
+    "env": {
+      "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+      "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+      "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-calendar"
+    },
+    "envOptional": [
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET"
+    ],
+    "envFromFile": {
+      "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+        "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+        "optional": true
+      }
+    }
+  }
+}

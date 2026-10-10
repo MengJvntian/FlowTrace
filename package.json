@@ -1,0 +1,49 @@
+{
+  "name": "mcp-cross-app-trace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP Gateway 跨应用智能体调用采集、字段流向分析与可视化工作台",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "install:local": "node tools/install-local.js",
+    "setup": "node tools/node.js bin/setup.js",
+    "start": "node tools/node.js bin/trace-manager.js",
+    "status": "node tools/node.js bin/trace-manager.js --status",
+    "serve": "node tools/node.js bin/serve.js",
+    "mount": "node tools/node.js bin/serve.js --mount",
+    "unmount": "node tools/node.js bin/serve.js --stop",
+    "oauth": "node tools/node.js bin/oauth-login.js",
+    "wrap": "node tools/node.js bin/wrap-config.js",
+    "sync-bundle": "node tools/node.js bin/sync-bundle.js",
+    "detect": "node tools/node.js bin/detect-agents.js",
+    "cred-audit": "node tools/node.js bin/cred-audit.js",
+    "check-page": "node tools/check-page.js",
+    "gateway": "node tools/node.js bin/gateway.js",
+    "demo": "node tools/node.js bin/demo.js",
+    "web": "node tools/node.js bin/web.js",
+    "trace": "node tools/node.js bin/trace.js",
+    "reset": "node tools/node.js bin/reset.js",
+    "demo:view": "node tools/node.js tools/start-demo.js",
+    "workbench": "node tools/node.js tools/open-workbench.js"
+  },
+  "dependencies": {
+    "@larksuiteoapi/lark-mcp": "0.5.1",
+    "@modelcontextprotocol/client": "2.2.0",
+    "@modelcontextprotocol/core": "2.2.0",
+    "@modelcontextprotocol/server": "2.2.0",
+    "@notionhq/notion-mcp-server": "2.5.2",
+    "cross-spawn": "7.0.6",
+    "dingtalk-mcp": "1.1.21",
+    "eventsource": "3.0.7",
+    "eventsource-parser": "3.1.1",
+    "imapflow": "2.3.0",
+    "jose": "6.2.12",
+    "mailparser": "3.9.37",
+    "nodemailer": "10.0.16",
+    "pkce-challenge": "5.0.1",
+    "zod": "4.6.5"
+  }
+}

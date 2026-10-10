@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>应用中心 · FlowTrace</title><link rel="stylesheet" href="/styles.css"><link rel="icon" href="/favicon.ico"></head>
+<body class="home"><aside class="rail"><a class="brand" href="/">↗ FlowTrace</a><nav class="rail-nav"><a class="nav-item" href="/">▦ 追踪工作台</a><a class="nav-item nav-current" href="/applications.html">◈ 应用中心</a><a class="nav-item" href="/ops.html">详情 / 运维</a></nav></aside>
+<main class="workspace"><header class="topbar"><div><div class="eyebrow">工作空间 / 应用中心</div><h1>我的应用</h1><p class="subtitle">账户绑定、连接状态与适配维护，一处查看。</p></div><button id="applications-refresh" class="btn btn-primary" type="button">检查连接和工具</button></header>
+<section class="block"><p id="applications-summary" role="status">正在读取本机配置…</p><p class="hint">首次展示保存的定义；点击检查会通过本机 Gateway 重新发现工具，不读取业务正文，不重新授权。</p><label>搜索应用或工具 <input id="applications-search" type="search" placeholder="例如 QQ 邮箱、get_me"></label><p id="applications-note" class="hint"></p></section>
+<section class="block"><div class="block-head"><h2>强制 Gateway 监控</h2><button id="monitoring-toggle" class="btn btn-primary" type="button" disabled>正在读取…</button></div><p id="monitoring-state" role="status"></p><p class="hint">开启：应用调用经过 Gateway，网关或目标应用不可用就停止监控任务。关闭：允许路由器在网关不可用时回退到应用上游，回退调用不会被本平台采集。普通聊天始终可以启动。</p><p class="hint">保存后用于后续调用；不会重启网关、修改 Agent 启动配置或重新授权。直接使用其他 API、浏览器或脚本的行为不在此开关控制范围内。</p></section>
+<div id="application-cards" class="application-cards"></div>
+</main><script src="/common.js" defer></script><script src="/applications.js" defer></script></body></html>

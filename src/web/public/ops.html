@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>详情 / 运维 · 跨 APP 数据流追踪（本地只读）</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="ops">
+    <header class="topbar">
+      <div class="topbar-main">
+        <h1>详情 / 运维</h1>
+        <p class="subtitle">
+          系统状态、库与只读连接细节、保留期策略、数据展示设置、访问记录、能力边界与诊断明细。
+          这些内容<strong>刻意不在首页</strong>，以免淹没「发生了什么、从哪到哪、是否确定」。
+        </p>
+      </div>
+      <div class="topbar-actions">
+        <button id="refresh" type="button" class="btn">刷新</button>
+        <a class="btn" href="/">← 返回结论视图</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="block" id="block-status">
+        <h2>数据与服务状态</h2>
+        <div class="grid" id="status-grid"></div>
+      </section>
+
+      <section class="block" id="block-runs">
+        <h2>任务计数口径与保留期</h2>
+        <div class="prose" id="runs-count-prose"></div>
+        <div class="table-wrap" id="runs-retention-wrap"><table id="runs-retention-table"></table></div>
+      </section>
+
+      <section class="block" id="block-run-ops">
+        <h2>受控运维入口（页面只显示命令原文，不代执行）</h2>
+        <div class="row-controls">
+          <label for="run-select-ops">任务：</label>
+          <select id="run-select-ops" class="select-inline"></select>
+        </div>
+        <div class="grid" id="run-ops"></div>
+      </section>
+
+      <section class="block" id="block-mask">
+        <h2>数据展示与访问</h2>
+        <div class="prose" id="mask-prose"></div>
+        <div class="prose" id="secrets-prose"></div>
+      </section>
+
+      <section class="block" id="block-audit">
+        <h2>受控查看原文的审计记录</h2>
+        <div class="summary" id="audit-summary"></div>
+        <div class="table-wrap" id="audit-table-wrap"><table id="audit-table"></table></div>
+      </section>
+
+      <section class="block" id="block-boundaries">
+        <h2>能力边界、散列用途与指标限定语</h2>
+        <div class="prose" id="boundaries-prose"></div>
+        <h2>覆盖度明细（原文措辞）</h2>
+        <div class="prose" id="coverage-prose"></div>
+      </section>
+
+      <section class="block" id="block-diagnostics">
+        <h2>诊断明细（排除原因与计数）</h2>
+        <div class="prose" id="diagnostics-prose"></div>
+        <div class="table-wrap" id="excluded-table-wrap"><table id="excluded-table"></table></div>
+      </section>
+
+      <section class="block" id="block-fields">
+        <h2>字段名对照</h2>
+        <div class="table-wrap" id="fields-table-wrap"><table id="fields-table"></table></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>演示数据全部虚构；只覆盖经 Gateway 观测到的 stdio MCP 流量。<a href="/">← 返回结论视图</a></span>
+    </footer>
+
+    <script src="/common.js" defer></script>
+    <script src="/ops.js" defer></script>
+  </body>
+</html>

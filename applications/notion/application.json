@@ -1,0 +1,20 @@
+{
+  "id": "notion",
+  "name": "Notion",
+  "status": "verified",
+  "upstream": {
+    "serverName": "notion",
+    "upstreamApp": "notion",
+    "gatewayId": "gw-notion",
+    "path": "/notion/mcp",
+    "transport": "stdio",
+    "command": "node",
+    "args": [
+      "tools/node.js",
+      "applications/notion/server.js"
+    ],
+    "env": {
+      "NOTION_TOKEN": "${NOTION_TOKEN}"
+    }
+  }
+}

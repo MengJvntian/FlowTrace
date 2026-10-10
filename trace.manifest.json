@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "_readme": "Default local Mock Mail/Calendar Gateway. No external account or OAuth required. Real applications are configured separately.",
+  "_usage": [
+    "node bin/trace-manager.js            # 启动全部上游，常驻，Ctrl+C 收尾并打印统计",
+    "node bin/trace-manager.js --once     # 启动→等就绪→打印报告→退出（全就绪 exit 0，否则 exit 3）",
+    "node bin/trace-manager.js --status   # 查正在跑的实例（人读；npm run status 等价）",
+    "node bin/trace-manager.js --status --json   # 机器可读",
+    "换实验：只改 experimentRunId；换端口：只改 http.port 或用 --port"
+  ],
+  "experimentRunId": "exp_manifest_demo",
+  "clientLabel": "demo",
+  "db": "demo-data/events.db",
+  "http": {
+    "host": "127.0.0.1",
+    "port": 8790
+  },
+  "upstreams": [
+    {
+      "serverName": "mail",
+      "upstreamApp": "mock-mail",
+      "gatewayId": "gw-mail",
+      "transport": "stdio",
+      "path": "/mail/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_mail.js"
+      ],
+      "cwd": "."
+    },
+    {
+      "serverName": "calendar-mock",
+      "upstreamApp": "mock-calendar",
+      "gatewayId": "gw-calendar-mock",
+      "transport": "stdio",
+      "path": "/calendar-mock/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_calendar.js",
+        "--store",
+        "demo-data/demo/calendar-events.json"
+      ],
+      "cwd": "."
+    }
+  ]
+}

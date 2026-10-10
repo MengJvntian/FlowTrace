@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light" />
+    <title>数据流追踪 · 只读视图</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="home">
+    <aside class="rail" aria-label="主导航">
+      <a class="brand" href="/" aria-label="FlowTrace 首页">
+        <span class="brand-mark" aria-hidden="true">↗</span>
+        <span>FlowTrace<small>跨应用数据流追踪</small></span>
+      </a>
+      <span class="nav-caption">工作空间</span>
+      <nav class="rail-nav">
+        <a href="#block-runs" class="nav-item nav-current"><span aria-hidden="true">▦</span>追踪视图</a>
+        <a href="#block-timeline" class="nav-item"><span aria-hidden="true">≡</span>调用时间线</a>
+        <a href="#block-flows" class="nav-item"><span aria-hidden="true">⇄</span>字段流向</a>
+        <a href="/applications.html" class="nav-item"><span aria-hidden="true">◈</span>应用中心</a>
+      </nav>
+      <div class="rail-foot">
+        <div class="rail-note"><span class="quiet-dot" aria-hidden="true"></span>本地只读可视化</div>
+        <a href="/ops.html" class="rail-detail">详情 / 运维 <span aria-hidden="true">↗</span></a>
+      </div>
+    </aside>
+    <div class="workspace">
+    <!-- 顶部：标题 + 一句话说明 + 两个动作（不再堆叠副标题/生命周期/筛选条/说明文字） -->
+    <header class="topbar">
+      <div class="topbar-main">
+        <div class="eyebrow">工作空间 <span aria-hidden="true">/</span> 追踪视图</div>
+        <h1>数据流追踪工作台</h1>
+        <p class="subtitle">看清数据从哪里来，到哪里去。</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="refresh" type="button" class="btn btn-primary">刷新</button>
+        <a class="btn" id="ops-link" href="/ops.html">详情 / 运维</a>
+      </div>
+    </header>
+
+    <!-- 一行紧凑工具条：筛选折叠开关 + 生效条件 + 复制深链 + 生命周期小字（状态信息降级为一行小字） -->
+    <div class="toolbar" id="filter-banner" data-active="no">
+      <button id="toggle-filters" type="button" class="btn btn-small" aria-expanded="false" aria-controls="filter-panel">筛选</button>
+      <span class="toolbar-status" id="filter-status">无（显示全部）</span>
+      <span class="toolbar-actions">
+        <button id="copy-link" type="button" class="btn btn-small">复制视图链接</button>
+        <span class="filter-copy-status" id="copy-status" role="status" aria-live="polite"></span>
+      </span>
+      <!--
+        自动刷新（功能 A）：纯前端轮询既有只读端点，不新增任何接口。
+        · 开关默认**开启**（`checked` 是服务端就发出去的默认状态，不靠脚本第一帧后再打开）；
+        · 只在页面可见时轮询（`visibilitychange`），回到前台立即刷一次；
+        · 刷新走和「刷新」按钮、深链同一条路径，因此当前筛选与地址栏条件原样保持，
+          已展开的行内明细、正在输入的筛选框、滚动位置都不会被重置；
+        · 失败不静默、也不清空页面：状态处给一行小字并自动退避重试。
+      -->
+      <span class="auto-refresh" id="auto-refresh">
+        <label class="checkbox auto-refresh-toggle" for="auto-refresh-enabled">
+          <input id="auto-refresh-enabled" type="checkbox" checked />
+          <span>自动刷新</span>
+        </label>
+        <label class="auto-refresh-interval" for="auto-refresh-interval">
+          <span class="visually-hidden">自动刷新间隔</span>
+          <select id="auto-refresh-interval" class="select-inline">
+            <option value="5" selected>每 5 秒</option>
+            <option value="10">每 10 秒</option>
+            <option value="30">每 30 秒</option>
+          </select>
+        </label>
+        <span class="auto-refresh-status" id="auto-refresh-status" role="status" aria-live="polite"></span>
+      </span>
+      <span
+        class="lifecycle"
+        id="lifecycle-line"
+        title="页面每 10 秒向只读端点 /api/alive 汇报一次存活；超时后由服务端决定是否退出。关闭本页后服务的行为见「详情 / 运维」。"
+      >生命周期：读取中…</span>
+    </div>
+
+    <!-- 筛选面板：默认折叠（hidden），展开后才显示各维度控件；筛选生效时脚本会自动展开 -->
+    <section class="filter-panel" id="filter-panel" hidden aria-label="筛选条件">
+      <div class="filter-group">
+        <h2 class="filter-group-title">筛选 · 任务列表</h2>
+        <div class="filters" id="runs-filters"></div>
+      </div>
+      <div class="filter-group">
+        <h2 class="filter-group-title">筛选 · 调用时间线</h2>
+        <div class="filters" id="timeline-filters"></div>
+      </div>
+      <div class="filter-group">
+        <h2 class="filter-group-title">筛选 · 字段流向图</h2>
+        <div class="filters" id="flows-filters"></div>
+      </div>
+      <div class="filter-panel-foot">
+        <button id="clear-filters" type="button" class="btn btn-small">清除筛选</button>
+        <span class="hint">清空全部条件（保留当前任务）；条件也可单独改回「不限」。</span>
+      </div>
+    </section>
+
+    <!-- 窄屏提示：`hidden` 在桌面宽度不显示、不计入桌面可见文本；≤900px 由样式表显示 -->
+    <p class="scr-hint" id="narrow-hint" hidden>窄屏提示：表格可左右滑动查看全部列。</p>
+
+    <main>
+      <section class="overview" aria-label="当前视图计数">
+        <div class="overview-card"><span class="overview-label">任务</span><strong id="overview-runs">—</strong><span class="overview-note">命中 / 全量</span></div>
+        <div class="overview-card"><span class="overview-label">应用操作</span><strong id="overview-calls">—</strong><span class="overview-note">当前任务</span></div>
+        <div class="overview-card"><span class="overview-label">数据关联</span><strong id="overview-edges">—</strong><span class="overview-note">当前任务</span></div>
+        <div class="overview-card"><span class="overview-label">写入字段</span><strong id="overview-fields">—</strong><span class="overview-note">当前任务</span></div>
+      </section>
+      <section class="block task-overview" id="task-overview" aria-labelledby="task-overview-title">
+        <div class="block-head"><h2 id="task-overview-title">当前任务概览</h2><span class="hint">当前任务全量记录，不随筛选缩减</span></div>
+        <div id="task-overview-content"><p class="hint">正在读取任务…</p></div>
+        <details class="task-organizer-disclosure"><summary>任务命名与分组</summary><div id="task-organizer" class="task-organizer"></div></details>
+        <div id="task-failures"></div>
+      </section>
+      <!-- ① 任务列表（首屏主体） -->
+      <section class="block" id="block-runs">
+        <div class="block-head">
+          <div class="section-title"><span class="section-index">01</span><h2>任务列表</h2></div>
+          <div class="summary" id="runs-summary">正在读取任务…</div>
+        </div>
+        <div class="table-wrap" id="runs-table-wrap"><table id="runs-table"></table></div>
+        <p class="block-foot">
+          <span class="legend-inline" id="runs-note">已登记 / 隐式<strong>分开计数、不合并</strong></span>
+          <details class="disclosure">
+            <summary>两类任务的差别</summary>
+            <p>
+              「<strong>已登记</strong>」＝库里有这个任务的记录；「<strong>隐式</strong>」＝只在调用记录里出现的任务。
+              两者<strong>分开计数、不合并</strong>。点「查看」会把下面的时间线与流向图切到该任务。
+            </p>
+          </details>
+        </p>
+      </section>
+
+      <!-- ② 调用时间线 -->
+      <section class="block" id="block-timeline">
+        <div class="block-head">
+          <div class="section-title"><span class="section-index">02</span><h2>调用时间线</h2></div>
+          <div class="row-controls">
+            <label for="run-select">任务</label>
+            <select id="run-select" class="select-inline"></select>
+            <span class="summary" id="timeline-summary"></span>
+          </div>
+        </div>
+        <div class="table-wrap" id="timeline-table-wrap"><table id="timeline-table"></table></div>
+        <p class="block-foot">
+          <span class="legend-inline">缺对以 <code>!!</code> 标出</span>
+          <details class="disclosure">
+            <summary>表格说明</summary>
+            <p>
+              时间按本机时区显示到秒；缺少返回结果的操作用 <code>!!</code> 标出
+              （数据有缺口不会让页面报错）。点「事件」列可展开该次调用的请求/响应记录（事件不随调用筛选再筛）。
+            </p>
+          </details>
+        </p>
+      </section>
+
+      <!-- ③ 应用间字段流向图 + ④ 单条边的证据详情 -->
+      <section class="block" id="block-flows">
+        <div class="block-head">
+          <div class="section-title"><span class="section-index">03</span><h2>应用间字段流向图</h2></div>
+          <div class="legend-compact" id="flows-legend"></div>
+        </div>
+        <div id="app-flow-groups" class="app-flow-groups" aria-label="按应用查看数据流"></div>
+        <div id="app-flow-detail" class="app-flow-detail"></div>
+        <details class="field-graph-disclosure" data-detail-key="field-graph"><summary>展开完整字段图</summary>
+          <div class="svg-wrap" id="flows-svg-wrap"></div>
+        </details>
+        <div class="card" id="edge-detail"></div>
+        <div id="flows-fields-wrap">
+          <div class="table-wrap" id="flows-table-wrap"><table id="flows-fields"></table></div>
+        </div>
+        <p class="block-foot">
+          <span class="legend-inline">候选来源<strong>全部列出</strong>，不替用户择一</span>
+          <details class="disclosure">
+            <summary>字段表说明</summary>
+            <p>
+              点「候选」列展开某个写入字段的全部候选来源；字段表<strong>跟随上面的流向图筛选联动</strong>
+              （被筛掉的候选会显式计数，不会静默消失）。
+            </p>
+          </details>
+        </p>
+      </section>
+
+      <!-- ⑤ 必要边界信息：压成一行（`#boundary-line` 严格只放 coverage.statements 原文；计数在各自区块与工具条里） -->
+      <section class="block block-boundary" id="block-boundary">
+        <span class="boundary-label">边界摘要</span>
+        <span class="boundary-statements" id="boundary-line">正在读取边界摘要…</span>
+        <span class="hint">全量口径；明细见「详情 / 运维」</span>
+      </section>
+    </main>
+
+    <dialog id="reveal-dialog" class="dialog">
+      <form method="dialog" id="reveal-form">
+        <h3>受控查看原文</h3>
+        <p id="reveal-target" class="prose"></p>
+        <p class="warn">
+          这是受控操作：本次查看会被记录（时间、目标、理由、来源），可在「详情 / 运维」页查看记录。
+        </p>
+        <label class="field">
+          <span>查看理由（必填，会进入记录）</span>
+          <input id="reveal-reason" type="text" minlength="3" required placeholder="例如：核对手机号是否逐字一致" />
+        </label>
+        <label class="checkbox">
+          <input id="reveal-ack" type="checkbox" />
+          <span>我确认本次查看会被记录，且不会把原文粘贴进报告或截图</span>
+        </label>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="reveal-cancel">取消</button>
+          <button type="button" class="btn btn-primary" id="reveal-submit">查看原文</button>
+        </div>
+      </form>
+    </dialog>
+
+    <footer class="footer">
+      <span>
+        仅覆盖经 Gateway 的调用。<a href="/ops.html">详情 / 运维</a>
+      </span>
+    </footer>
+    </div>
+
+    <script src="/common.js" defer></script>
+    <script src="/isr.js" defer></script>
+    <script src="/filters.js" defer></script>
+    <script src="/data.js" defer></script>
+    <script src="/insights.js" defer></script>
+    <script src="/tasks.js" defer></script>
+    <script src="/task-panel.js" defer></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

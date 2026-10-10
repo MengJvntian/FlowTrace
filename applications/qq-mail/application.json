@@ -1,0 +1,22 @@
+{
+  "id": "qq-mail",
+  "name": "QQ 邮箱",
+  "status": "verified",
+  "scope": "QQ 邮箱 IMAP 读取、草稿、标记与移动，以及给自己的邮箱发送邮件",
+  "upstream": {
+    "serverName": "qq-mail",
+    "upstreamApp": "qq-mail",
+    "gatewayId": "gw-qq-mail",
+    "path": "/qq-mail/mcp",
+    "transport": "stdio",
+    "command": "node",
+    "args": [
+      "tools/node.js",
+      "applications/qq-mail/server.js"
+    ],
+    "env": {
+      "QQ_MAIL_EMAIL": "${QQ_MAIL_EMAIL}",
+      "QQ_MAIL_AUTH_CODE": "${QQ_MAIL_AUTH_CODE}"
+    }
+  }
+}

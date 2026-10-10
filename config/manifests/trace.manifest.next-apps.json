@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "_readme": "Google 邮件、日历、文档与 GitHub 的清单示例。使用前配置所需账户和环境变量，并明确指定 --manifest。",
+  "experimentRunId": "exp_manifest_demo",
+  "clientLabel": "demo",
+  "db": "demo-data/events.db",
+  "http": {
+    "host": "127.0.0.1",
+    "port": 8790
+  },
+  "upstreams": [
+    {
+      "serverName": "mail",
+      "upstreamApp": "mock-mail",
+      "gatewayId": "gw-mail",
+      "transport": "stdio",
+      "path": "/mail/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_mail.js"
+      ],
+      "cwd": "."
+    },
+    {
+      "serverName": "calendar-mock",
+      "upstreamApp": "mock-calendar",
+      "gatewayId": "gw-calendar-mock",
+      "transport": "stdio",
+      "path": "/calendar-mock/mcp",
+      "command": "node",
+      "args": [
+        "src/mock_servers/mock_calendar.js",
+        "--store",
+        "demo-data/demo/calendar-events.json"
+      ],
+      "cwd": "."
+    },
+    {
+      "_说明": "真实 Google（A 路线）：command/args 是 uvx workspace-mcp 的 stdio 上游。凭据走**引用式**，不写死明文：`env` 的 `${VAR}` 从启动进程环境解析（未设置 = 配置错误 exit 2，绝不用空串继续）；`envFromFile` 从文件读（适合把密钥放在 %LOCALAPPDATA% 等用户目录，不进仓库）。**为什么必须写在清单里**：MCP SDK 的 stdio 客户端只继承 12 个白名单环境变量（APPDATA/HOMEDRIVE/HOMEPATH/LOCALAPPDATA/PATH/PROCESSOR_ARCHITECTURE/SYSTEMDRIVE/SYSTEMROOT/TEMP/USERNAME/USERPROFILE/PROGRAMFILES），GOOGLE_OAUTH_CLIENT_* 不在其中，所以「终端里 set 一下就期望上游收到」是不成立的。用法：`set GOOGLE_OAUTH_CLIENT_ID=...` + `set GOOGLE_OAUTH_CLIENT_SECRET=...` 后 `npm start`。envFromFile 里的 optional:true 只是让本示例清单在没配密钥的机器上仍能加载；真正要用时请去掉 optional，以便尽早报错。",
+      "serverName": "gmail",
+      "upstreamApp": "google-gmail",
+      "gatewayId": "gw-gmail",
+      "transport": "stdio",
+      "path": "/gmail/mcp",
+      "command": "uvx",
+      "args": [
+        "--offline",
+        "--from",
+        "workspace-mcp==2.0.1",
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "gmail"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-gmail"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "真实 Google Calendar（A 路线）—— 与上面 gmail 是**同一个 workspace-mcp 的另一个实例**，--tools 换成 calendar。为什么必须是两个实例：网关要求「一个上游一个路径」（manifest 会拒绝路径冲突），而客户端侧要按应用分别取名（mcp__gmail__* 读、mcp__calendar__* 写），血缘也才能区分源与宿。**关键：两个实例必须各用独立的凭据目录** —— workspace-mcp 按 `--tools`（scopes.py 的 TOOL_SCOPES_MAP）决定要请求哪些 scope，而它默认把令牌写进同一个 `~/.google_workspace_mcp/credentials/<邮箱>.json`；于是 gmail 实例写的 scope 不满足 calendar 实例 → 后者覆盖 → 前者又不满足 → **无限来回要求重新授权**（2026-10-05 实测）。用 WORKSPACE_MCP_CREDENTIALS_DIR 分目录后各自稳定（代价：两个实例各授权一次）。本条目占用 `calendar` 这个名字，因此 `mcp__calendar__*` 与浏览器页面上的「calendar」指的就是**真实** Google Calendar。",
+      "serverName": "calendar",
+      "upstreamApp": "google-calendar",
+      "gatewayId": "gw-google-calendar",
+      "transport": "stdio",
+      "path": "/calendar/mcp",
+      "command": "uvx",
+      "args": [
+        "--offline",
+        "--from",
+        "workspace-mcp==2.0.1",
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "calendar"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-calendar"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "_说明": "优先接入 Google Docs；真实账户及工具发现待验证。独立凭据目录避免影响 Gmail/Calendar。",
+      "serverName": "docs",
+      "upstreamApp": "google-docs",
+      "gatewayId": "gw-google-docs",
+      "transport": "stdio",
+      "path": "/docs/mcp",
+      "command": "uvx",
+      "args": [
+        "--offline",
+        "--from",
+        "workspace-mcp==2.0.1",
+        "workspace-mcp",
+        "--single-user",
+        "--transport",
+        "stdio",
+        "--tools",
+        "docs"
+      ],
+      "cwd": ".",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}",
+        "WORKSPACE_MCP_CREDENTIALS_DIR": "${USERPROFILE}/.google_workspace_mcp/credentials-docs"
+      },
+      "envOptional": [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET"
+      ],
+      "envFromFile": {
+        "GOOGLE_OAUTH_CLIENT_SECRET_FILE": {
+          "path": "${LOCALAPPDATA}/mcp-cross-app-trace/google-oauth-client-secret.txt",
+          "optional": true
+        }
+      }
+    },
+    {
+      "serverName": "github",
+      "upstreamApp": "github",
+      "gatewayId": "gw-github",
+      "path": "/github/mcp",
+      "transport": "streamable-http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_MCP_TOKEN}"
+      },
+      "_说明": "GitHub 官方远程 MCP。缺少环境变量即拒绝启动；不会记录授权头值，不读取其他应用的账户令牌。"
+    }
+  ]
+}

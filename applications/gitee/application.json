@@ -1,0 +1,16 @@
+{
+  "id": "gitee",
+  "name": "Gitee",
+  "status": "verified",
+  "upstream": {
+    "serverName": "gitee",
+    "upstreamApp": "gitee",
+    "gatewayId": "gw-gitee",
+    "path": "/gitee/mcp",
+    "transport": "streamable-http",
+    "url": "https://api.gitee.com/mcp",
+    "headers": {
+      "Authorization": "Bearer ${GITEE_MCP_TOKEN}"
+    }
+  }
+}

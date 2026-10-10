@@ -1,0 +1,16 @@
+{
+  "id": "tencent-docs",
+  "name": "腾讯文档",
+  "status": "verified",
+  "upstream": {
+    "serverName": "tencent-docs",
+    "upstreamApp": "tencent-docs",
+    "gatewayId": "gw-tencent-docs",
+    "path": "/tencent-docs/mcp",
+    "transport": "streamable-http",
+    "url": "https://docs.qq.com/openapi/mcp",
+    "headers": {
+      "Authorization": "${TENCENT_DOCS_TOKEN}"
+    }
+  }
+}

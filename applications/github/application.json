@@ -1,0 +1,16 @@
+{
+  "id": "github",
+  "name": "GitHub",
+  "status": "verified",
+  "upstream": {
+    "serverName": "github",
+    "upstreamApp": "github",
+    "gatewayId": "gw-github",
+    "path": "/github/mcp",
+    "transport": "streamable-http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {
+      "Authorization": "Bearer ${GITHUB_MCP_TOKEN}"
+    }
+  }
+}
