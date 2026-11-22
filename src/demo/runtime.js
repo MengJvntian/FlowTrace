@@ -173,8 +173,8 @@ export function sandboxLimitationMessage(input) {
   const label = input.label ?? 'demo';
   const entry = input.entry ?? path.join(REPO_ROOT, 'bin', 'demo.js');
   const lines = [
-    `[${label}] TRACE_${label.replace(/-/g, '_').toUpperCase()}_SUBPROCESS_UNAVAILABLE 当前环境无法启动 stdio 子进程。`,
-    `[${label}] 原因：当前运行环境禁止带管道的子进程 stdio（实测 ${input.probe.code ?? input.error?.code ?? 'EPERM'} / syscall=${
+    `[${label}] TRACE_${label.replace(/-/g, '_').toUpperCase()}_SUBPROCESS_UNAVAILABLE 路径 B（真实跨进程 stdio）无法在本沙箱内执行。`,
+    `[${label}] 原因：本会话禁止带管道的子进程 stdio（实测 ${input.probe.code ?? input.error?.code ?? 'EPERM'} / syscall=${
       input.probe.syscall ?? input.error?.syscall ?? 'spawn'
     }）。StdioClientTransport 必然使用 stdin/stdout 管道，因此在 spawn 阶段即失败。`,
   ];
@@ -182,8 +182,13 @@ export function sandboxLimitationMessage(input) {
     lines.push(`[${label}] 真实 spawn 结果：${input.error.code ?? 'null'} / syscall=${input.error.syscall ?? 'null'} / ${input.error.message}`);
   }
   lines.push(
-    `[${label}] 请在允许启动子进程的普通终端运行；此启动失败不会自动切换运行模式。`,
-    `[${label}] 启动与排障步骤见 docs/user/INSTALL.md 和 docs/user/troubleshooting.md。`,
+    `[${label}] 这是**环境限制**，不是被测实现的失败；本进程按契约快速失败（退出码 3），绝不伪装成功、绝不静默降级为路径 A。`,
+    `[${label}] 同一批断言在沙箱内已由路径 A（进程内同构拓扑，真实 gateway + 真实 mock_servers）覆盖；两条路径写出同 schema 证据供逐字段比对。`,
+    `[${label}] 替代接入路径（t26 文案补充）：客户端侧改用 **Streamable HTTP** —— \`node bin/gateway-http.js --upstream-command … --upstream-app …\``,
+    `[${label}] （客户端↔Gateway 走 HTTP，上游仍由 Gateway 以 stdio 管道 spawn；端点 /mcp、自检 GET /healthz）。`,
+    `[${label}] 注意：HTTP 方案**同样要求启动 Gateway 的终端允许带管道的子进程 stdio**；禁管道环境请把 Gateway 放到沙箱外（普通终端）运行，再让客户端连它的 HTTP 端点。`,
+    `[${label}] 启动与故障排查见 docs/user/INSTALL.md 和 docs/user/troubleshooting.md。`,
+    `[${label}] 沙箱外（真实用户终端）完整复现命令（本机捆绑 Node 24：${BUNDLED_NODE}）：`,
     outsideSandboxCommands({ extraArgs: input.extraArgs, label, entry }),
   );
   return lines.join('\n');

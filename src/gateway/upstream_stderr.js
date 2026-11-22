@@ -8,7 +8,7 @@
  *   1. 持续附加写入 `<path>`（UTF-8，逐块 `writeSync`，行序与到达顺序一致）；
  *   2. 内存保留最近 `tailBytes`（默认 64 KiB）的有界尾部，供生命周期事件附带证据；
  *   3. 事件里的 tail 先做**密钥脱敏**（`TOKEN=…`/`PASSWORD: …` → `***`）；
- *      落盘文件保留原始内容（文件是诊断用途，见 相关实现 的差异说明）；
+ *      落盘文件保留原始内容（文件是诊断用途，见 docs/design/protocol-matrix.md §5.5 的差异说明）；
  *   4. **t16：延迟创建**——只有收到**非空** stderr 数据时才创建文件；
  *      静默上游（启动即失败、或全程不输出）**不会**留下 0 字节文件。
  *      此时事件仍给出**预期路径** `upstream_stderr_path`，并显式标注
@@ -18,7 +18,7 @@
  *      诊断不丢。即不变量：**该路径要么不存在，要么大小 > 0**。
  *
  * 边界：上游把日志写到 **stdout** 的情况仍不可辨识（SDK ReadBuffer 静默丢弃非法行），
- * 不属本模块范围，见 相关实现。
+ * 不属本模块范围，见 docs/design/protocol-matrix.md §5.1。
  */
 import fs from 'node:fs';
 import path from 'node:path';

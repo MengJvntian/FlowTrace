@@ -1253,7 +1253,9 @@ async function main() {
       out(renderHuman(payload));
       out(`[serve] 退出原因：${finished.reason}`);
     }
-    process.exit(report.all_ready ? 0 : 3);
+    // Let HTTP/SDK handles finish closing before Node tears down libuv.
+    process.exitCode = report.all_ready ? 0 : 3;
+    return;
   }
 
   // ── 5) 常驻 + 生命周期（心跳空闲退出 / 停止文件 / 信号）──────────────────

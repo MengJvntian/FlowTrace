@@ -293,7 +293,7 @@ export function buildSnippets(entries, paths, upstreams = []) {
     }
     // 远端 HTTP 上游：Codex 侧走 HTTP 的写法本会话未验证 —— 如实标注，不编造语法
     codex.push(`# 远端 HTTP 上游：Codex 侧请直接用 Gateway 的本地路径（下面是其地址）；`);
-    codex.push(`# 请使用 applications/agent-routing 的路由安装入口生成客户端配置。`);
+    codex.push(`# Codex 的 HTTP MCP 写法本会话未验证，别照抄不存在的语法。`);
     codex.push(`#   ${entry.url}`);
     codex.push('');
   }

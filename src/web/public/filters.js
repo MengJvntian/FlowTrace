@@ -89,7 +89,19 @@
 
   function dateOf(value) {
     var candidate = trimmed(value);
-    return DATE_RE.test(candidate) ? candidate : '';
+    if (!DATE_RE.test(candidate) || candidate.slice(0, 4) === '0000') return '';
+    var date = new Date(candidate + 'T00:00:00Z');
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === candidate ? candidate : '';
+  }
+
+  function parseDateInput(value) {
+    var input = trimmed(value);
+    var parts = /^(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日$/u.exec(input);
+    return dateOf(parts ? parts[1] + '-' + parts[2].padStart(2, '0') + '-' + parts[3].padStart(2, '0') : input);
+  }
+
+  function displayDate(value) {
+    return value.replace(/^(\d{4})-(\d{2})-(\d{2})$/u, '$1年$2月$3日');
   }
 
   /** @returns {Record<string, any>} 空筛选（全部为「不限」）。 */
@@ -276,7 +288,9 @@
           key: path,
           label: LABELS[path] || key,
           value: value,
-          display: value + (VALUE_LABELS[value] ? '（' + VALUE_LABELS[value] + '）' : ''),
+          display: path === 'calls.status' ? statusLabel(value)
+            : key === 'from' || key === 'to' ? displayDate(value)
+              : value + (VALUE_LABELS[value] ? '（' + VALUE_LABELS[value] + '）' : ''),
         });
       });
     });
@@ -574,6 +588,8 @@
     RULE_LABELS: RULE_LABELS,
     statusLabel: statusLabel,
     ruleLabel: ruleLabel,
+    parseDateInput: parseDateInput,
+    displayDate: displayDate,
     statementsText: statementsText,
     createFilters: createFilters,
     parse: parse,

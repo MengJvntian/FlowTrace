@@ -11,7 +11,7 @@
  *      `2026-10-08T14:00:00Z` / `2026-10-08 14:00:00` / `2026-10-08 14:00`；
  *   4. 数字与字符串等价：`'042'` == `42` == `'42.0'`（字符串数值规范化，不做浮点运算）。
  *
- * 明确**不做**（越界即为缺陷，见 相关实现）：
+ * 明确**不做**（越界即为缺陷，见 docs/design/lineage.md §2.3）：
  *   语义/同义词/模糊匹配、Unicode 兼容等价（NFC/NFKC）、时区换算、DD-MM-YYYY 歧义形式、
  *   把纯 4 位年份当日期、把 8 位数字以外的数字当日期、子串包含关系。
  *
@@ -230,7 +230,7 @@ export function parseTemporal(text) {
     return {
       value_kind: VALUE_KIND.DATE,
       // 计划书 §P2 明确把 `10-08-2026` 与 `2026-10-08` 列为等价形式 → 采用 MM-DD-YYYY。
-      // DD-MM-YYYY 与 MM-DD-YYYY 无法从字面区分，本实现**只**接受 MM-DD-YYYY（相关实现）。
+      // DD-MM-YYYY 与 MM-DD-YYYY 无法从字面区分，本实现**只**接受 MM-DD-YYYY（docs/design/lineage.md §2.3）。
       canonical: `${year}-${pad2(Number(month))}-${pad2(Number(day))}`,
       transforms: ['date_mm_dd_yyyy'],
       incomplete: false,
@@ -468,7 +468,7 @@ function finish(value) {
 
 /**
  * 计划书要求第 2 条的「通用值」判定：纯日期 / 纯时间 / 小整数 / 常见词。
- * 完整的「日期 + 时间」不视为通用值（见 相关实现）。
+ * 完整的「日期 + 时间」不视为通用值（见 docs/design/lineage.md §3.2）。
  * @param {NormalizedValue} value
  * @returns {{generic: boolean, reasons: string[]}}
  */
@@ -521,7 +521,7 @@ export function canonicallyEqual(a, b) {
 }
 
 /**
- * 脱敏展示值（**只用于展示投影**；P3 的隐私策略见 相关实现，L1 不接管）。
+ * 脱敏展示值（**只用于展示投影**；P3 的隐私策略见 docs/design/privacy.md，L1 不接管）。
  * @param {*} raw
  * @param {string} valueKind
  * @returns {string}

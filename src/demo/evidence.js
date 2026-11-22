@@ -19,7 +19,7 @@ import path from 'node:path';
 
 import { digestOf, parseJsonSafe, stableStringify } from '../shared/json.js';
 
-/** 证据 schema 版本（与 相关实现 的事件 schema 版本相互独立）。 */
+/** 证据 schema 版本（与 docs/design/schema.md 的事件 schema 版本相互独立）。 */
 export const EVIDENCE_SCHEMA = 'mcp-cross-app-trace/demo-evidence/1';
 
 

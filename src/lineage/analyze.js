@@ -308,7 +308,7 @@ export function summarizeResult(result) {
 }
 
 /**
- * 脱敏投影（**只用于展示**；P3 的隐私策略见 相关实现）。
+ * 脱敏投影（**只用于展示**；P3 的隐私策略见 docs/design/privacy.md）。
  * 分析本身始终使用原始值比较，脱敏发生在结果投影阶段，不改变任何边的成立与否。
  * @param {Record<string, any>} result
  * @returns {Record<string, any>}

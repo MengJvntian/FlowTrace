@@ -1,7 +1,7 @@
 /**
  * src/lineage/rules.js — P2 匹配规则、置信级别与「不确定」判定（L1）
  *
- * 规则（详见 相关实现 与 §3）：
+ * 规则（详见 docs/design/lineage.md §2.4 与 §3）：
  *   observed（该次已观测的读响应与写请求都出现同一规范化值）
  *     - `exact_value`：原样相等；
  *     - `normalized_equivalence`：空白/大小写/日期时间格式规范化后相等；
@@ -315,7 +315,7 @@ export function assessSinkField(candidates) {
 }
 
 /**
- * 置信级别 = 规则基准 × 收窄项（见 相关实现）。
+ * 置信级别 = 规则基准 × 收窄项（见 docs/design/lineage.md §3）。
  * @param {Record<string, any>} candidate
  * @param {{competing: boolean, textOnly: boolean}} flags
  * @returns {{confidence: string, reasons: string[]}}

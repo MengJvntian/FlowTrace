@@ -1,7 +1,7 @@
 /**
  * src/web/server.js — P3 只读页面服务（W1）
  *
- * 三道只读防线（相关实现）：
+ * 三道只读防线（docs/design/privacy.md §1）：
  *   1. **SQLite**：连接以 `readOnly: true` 打开（见 readonly.js）；
  *   2. **store 门面**：只暴露查询方法白名单；
  *   3. **HTTP**：证据接口仅 GET/HEAD；独立的本机设置端点只允许修改监控模式。
@@ -196,10 +196,13 @@ export function handleRequest(ctx, req, res, logger) {
   // Configuration only: never changes evidence or native client profiles.
   if (url.pathname === '/api/settings/monitoring') {
     if (method === 'GET' || method === 'HEAD') {
-      respond(200, { ...readMonitoringMode(ctx.monitoringFile), token: ctx.controlToken });
+      respond(200, { ...(ctx.demoMode ? { enforce: true } : readMonitoringMode(ctx.monitoringFile)), demo: ctx.demoMode, token: ctx.controlToken });
       return;
     }
     if (method === 'POST') {
+      if (ctx.demoMode) {
+        respond(403, { ok: false, error: { message: '演示模式不会修改正式监控开关。请打开独立工作台操作。' } }); return;
+      }
       if (req.headers.origin !== url.origin || req.headers['x-trace-control-token'] !== ctx.controlToken || req.headers['content-type'] !== 'application/json') {
         respond(403, { ok: false, error: { message: '请从本机应用中心操作开关。' } }); return;
       }

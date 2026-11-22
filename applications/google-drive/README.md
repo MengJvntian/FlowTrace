@@ -6,7 +6,7 @@
 2. 在本机配置 OAuth Client ID/Secret，准备包含本应用的 Gateway 清单并启动对应上游。默认 Mock 清单不含真实 Google 端点。当前 `connect.bat` 需要已有的本机账户配置；找不到账号时先按接入教程初始化，不要反复点击授权。
 3. 双击本目录 `connect.bat`，在 Google 页面选择自己的账户，核对应用名称和请求权限后确认。用途：文件列表和内容读取；上传、创建、移动、修改或清理文件需要相应写入权限。 实际 scope 以固定版本 workspace-mcp、所选工具和授权页面为准；不需要的业务能力不应额外授权。
 4. 本项目使用开源 `workspace-mcp==2.0.1`，不是 Google 官方 MCP；需要先安装/缓存该版本。各应用使用独立凭据目录，不复制其他应用的访问或刷新令牌。
-5. 完成网页授权后返回终端按回车，脚本进行账户读取验证并重载服务。出现 account_read_verified: true 只代表账户读取成功，不等于所有读写权限均已开通。 日后 `check.bat` 使用现有配置检查工具发现，不代表所有业务权限可用。
+5. 完成网页授权后返回终端按回车，脚本进行账户读取验证并重载服务。出现 account_read_verified: true 只代表账户读取成功，不等于全部读写工具已验收。 日后 `check.bat` 使用现有配置检查工具发现，不代表所有业务权限可用。
 
 本机令牌目录：`%USERPROFILE%/.google_workspace_mcp/credentials-drive`。Token、OAuth Secret 不放入项目 JSON，不提交到 GitHub。
 

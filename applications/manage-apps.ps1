@@ -1,8 +1,8 @@
-﻿param([string]$ProjectDirectory)
+param([string]$ProjectDirectory)
 $ErrorActionPreference = 'Stop'
 if (-not $ProjectDirectory) { $ProjectDirectory = Split-Path -Parent $PSScriptRoot }
 Set-Location -LiteralPath $projectDirectory
-$statusLabels = @{ verified = '支持接入'; 'acceptance-in-progress' = '暂不可用'; 'code-ready' = '暂不可用'; planned = '待开发'; 'pending-free-check' = '待核对免费范围'; 'excluded-paid' = '需付费，已移出目标'; 'excluded-enterprise' = '需企业认证，已跳过' }
+$statusLabels = @{ verified = '已完成真实验收'; 'acceptance-in-progress' = '验收中'; 'code-ready' = '待账户验收'; planned = '待开发'; 'pending-free-check' = '待核对免费范围'; 'excluded-paid' = '需付费，已移出目标'; 'excluded-enterprise' = '需企业认证，已跳过' }
 while ($true) {
     $catalogJson = & node tools/node.js tools/application-catalog.js list
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -10,7 +10,7 @@ while ($true) {
     for ($index = 0; $index -lt $applications.Count; $index++) {
         $application = $applications[$index]
         $statusLabel = if ($statusLabels.ContainsKey($application.status)) { $statusLabels[$application.status] } else { $application.status }
-        $enabledLabel = if ($application.enabled) { '允许加载' } else { '已停用' }
+        $enabledLabel = if ($application.enabled) { '允许加载' } else { '停用或待开发' }
         Write-Host (('{0}. {1} [{2}] {3}' -f ($index + 1), $application.name, $statusLabel, $enabledLabel))
     }
     Write-Host '输入应用编号，G 绑定 Agent 网关入口，C 检查 Agent 路由，M 强制监控开关，Q 退出。查看列表不会打开浏览器。'

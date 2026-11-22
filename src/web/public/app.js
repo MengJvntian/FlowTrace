@@ -86,7 +86,7 @@
     selectedRun: null,
     timeline: null,
     flows: null,
-    edgeDetail: null,
+    edgeSelection: null,
     flowGroup: null,
     filters: F.parse(window.location.search),
     applied: null,
@@ -165,7 +165,8 @@
     var full = text(value);
     if (full.length <= 120) return el('span', { class: 'value-preview', text: full });
     return el('div', { class: 'value-preview' }, [el('span', { text: UI.truncate(full, 120) }),
-      keyedDetails(key, state.flows && state.flows.compact && full.endsWith('…') ? '展开预览（完整原文见证据）' : '展开全文', [el('div', { class: 'raw-value', text: full })])]);
+      keyedDetails(key, state.flows && state.flows.compact && full.endsWith('…') ? '展开预览（完整原文见证据）' : '展开全文',
+        [el('div', { class: 'raw-value', text: full })], '收起内容')]);
   }
 
   function focusCall(id) {
@@ -286,6 +287,9 @@
       if (!active || !active.id) return;
       var next = document.getElementById(active.id);
       if (!next || next === document.activeElement) return;
+      if (typeof active.dateDraft === 'string' && next.dataset.dateValue === active.dateValue) {
+        next.value = active.dateDraft;
+      }
       next.focus();
       if (typeof next.setSelectionRange === 'function' && typeof active.selectionStart === 'number') {
         try {
@@ -305,6 +309,8 @@
     if (!node || !node.id || FOCUS_KEEP_IDS.indexOf(node.id) === -1) return null;
     return {
       id: node.id,
+      dateValue: node.dataset.dateValue,
+      dateDraft: node.dataset.dateValue !== undefined ? node.value : undefined,
       selectionStart: typeof node.selectionStart === 'number' ? node.selectionStart : null,
       selectionEnd: typeof node.selectionEnd === 'number' ? node.selectionEnd : null,
     };
@@ -422,16 +428,53 @@
 
   /** 日期范围（按 UTC 日期比较）。 */
   function dateFilter(label, group, key) {
+    var id = 'filter-' + group + '-' + key;
+    var current = state.filters[group][key];
+    var visibleDate = F.displayDate(current);
     var input = el('input', {
-      type: 'date',
-      class: 'filter-input',
-      id: 'filter-' + group + '-' + key,
-      value: state.filters[group][key],
+      type: 'text', class: 'filter-input', id: id, value: visibleDate,
+      placeholder: '年/月/日', title: '可输入例如 2026年11月22日，或使用日历选择。',
+      dataset: { dateValue: visibleDate },
     });
-    input.addEventListener('change', function (event) {
-      setFilter(group, key, event.target.value);
+    var picker = el('input', { type: 'date', class: 'date-picker-native', value: current, tabindex: '-1', 'aria-hidden': 'true' });
+    function commitDate() {
+      if (!input.isConnected) return;
+      var value = input.value.trim();
+      var date = F.parseDateInput(value);
+      if (value && !date) {
+        input.setCustomValidity('请输入有效日期，例如 2026年11月22日。');
+        input.reportValidity();
+        return;
+      }
+      input.setCustomValidity('');
+      if (date === current) {
+        input.value = visibleDate;
+        return;
+      }
+      setFilter(group, key, date);
+    }
+    input.addEventListener('input', function () { input.setCustomValidity(''); });
+    // Removing a focused field during rendering can itself fire change.
+    input.addEventListener('change', function () { queueMicrotask(commitDate); });
+    input.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      commitDate();
     });
-    return el('label', { class: 'filter-field' }, [el('span', { text: label }), input]);
+    picker.addEventListener('change', function () { setFilter(group, key, picker.value); });
+    var children = [input];
+    if (typeof picker.showPicker === 'function') {
+      var icon = UI.svgEl('svg', { viewBox: '0 0 24 24', width: 18, height: 18, fill: 'none',
+        stroke: 'currentColor', 'stroke-width': 1.7, 'aria-hidden': 'true' }, [
+        UI.svgEl('rect', { x: 4, y: 5, width: 16, height: 15, rx: 2 }),
+        UI.svgEl('path', { d: 'M8 3v4m8-4v4M4 10h16m-12 4h2m4 0h2' }),
+      ]);
+      children.push(el('button', { type: 'button', class: 'date-picker-button', 'aria-label': '选择' + label,
+        onclick: function () { picker.showPicker(); } }, [icon]), picker);
+    }
+    return el('div', { class: 'filter-field' }, [
+      el('label', { for: id, text: label }), el('div', { class: 'date-filter-control' }, children),
+    ]);
   }
 
   function uniqueValues(items, pick) {
@@ -481,9 +524,15 @@
    * @param {Array<Node|string>} children
    * @returns {HTMLElement}
    */
-  function keyedDetails(key, summaryText, children) {
+  function keyedDetails(key, summaryText, children, closeText) {
     var node = details(summaryText, children);
     if (key) node.dataset.detailKey = key;
+    if (closeText) {
+      var summary = node.firstElementChild;
+      clear(summary);
+      summary.appendChild(el('span', { class: 'disclosure-closed', text: summaryText }));
+      summary.appendChild(el('span', { class: 'disclosure-open', text: closeText }));
+    }
     return node;
   }
 
@@ -832,11 +881,15 @@
     clear(svgWrap);
     clear(fieldsWrap);
     clear(filtersBox);
+    if (state.edgeSelection && (!state.applied || !state.applied.edges.items.some(function (edge) {
+      return edge.edge_id === state.edgeSelection.edgeId;
+    }))) state.edgeSelection = null;
     renderAppFlows();
 
     var data = state.flows;
     if (!data) {
       svgWrap.appendChild(el('p', { class: 'hint', text: '请选择一个任务' }));
+      renderEdgeDetail();
       return;
     }
     var applied = state.applied;
@@ -950,7 +1003,7 @@
     fieldsWrap.appendChild(el('div', {
       class: 'summary',
       id: 'flows-boundary-counts',
-      text: '未覆盖判定：当前筛选 ' + applied.boundary.notCoveredVisible + ' / 全量 ' + applied.boundary.notCoveredTotal + ' 条　（覆盖度措辞属全量事实，见下方「边界摘要」）',
+      text: '未覆盖判定：当前筛选 ' + applied.boundary.notCoveredVisible + ' / 全量 ' + applied.boundary.notCoveredTotal + ' 条。下方检查结果不随筛选变化。',
     }));
 
     renderEdgeDetail();
@@ -970,8 +1023,13 @@
     groups.forEach(function (group) {
       var selected = state.flowGroup === group.key;
       box.appendChild(el('button', { type: 'button', class: 'app-flow-card' + (selected ? ' is-selected' : ''),
-        'aria-pressed': selected ? 'true' : 'false', 'aria-controls': 'app-flow-detail',
-        onclick: function () { void preservingScroll(function () { state.flowGroup = selected ? null : group.key; renderFlows(); return Promise.resolve(); }); } }, [
+        'aria-pressed': String(selected), 'aria-expanded': String(selected), 'aria-controls': 'app-flow-detail',
+        onclick: function () { void preservingScroll(function () {
+          if (state.edgeSelection && state.edgeSelection.source === 'candidate') state.edgeSelection = null;
+          state.flowGroup = selected ? null : group.key;
+          renderFlows();
+          return Promise.resolve();
+        }); } }, [
         el('span', { class: 'app-flow-route' }, [el('strong', { text: group.source }), el('span', { class: 'flow-arrow', text: '→' }), el('strong', { text: group.sink })]),
         el('span', { class: 'hint', text: group.fieldCount + ' 个写入字段 · ' + group.edges.length + ' 条候选关联' }),
         el('span', { class: 'hint', text: '已观测 ' + group.observed + ' · 推断 ' + group.inferred }),
@@ -1001,10 +1059,20 @@
         var item = el('div', { class: 'flow-candidate' });
         item.appendChild(el('p', { text: UI.toolLabel(edge.source_tool_name, edge.source_upstream_app) + ' → ' + UI.toolLabel(edge.sink_tool_name, edge.sink_upstream_app) }));
         item.appendChild(el('p', { class: 'hint', text: F.ruleLabel(edge.rule) + ' · 可信程度：' + UI.confidenceLabel(edge.confidence) + (edge.representation === 'inferred' ? ' · 推断' : ' · 已观测匹配') }));
-        item.appendChild(el('button', { type: 'button', class: 'btn btn-small', text: '查看这条关联的证据', onclick: function () { loadEdgeDetail(edge.edge_id); } }));
+        item.appendChild(el('button', { type: 'button', class: 'btn btn-small',
+          dataset: { evidenceSource: 'candidate', edgeId: edge.edge_id },
+          'aria-controls': 'edge-detail',
+          onclick: function () { toggleEdgeDetail(edge.edge_id, 'candidate'); } }));
         candidates.appendChild(item);
       });
-      card.appendChild(keyedDetails('flow-candidates:' + first.sink_event_id + ':' + first.sink_json_path, '查看 ' + edges.length + ' 条可见候选', [candidates]));
+      var disclosure = keyedDetails('flow-candidates:' + first.sink_event_id + ':' + first.sink_json_path,
+        '查看 ' + edges.length + ' 条可见候选', [candidates], '收起 ' + edges.length + ' 条候选');
+      disclosure.addEventListener('toggle', function () {
+        var selection = state.edgeSelection;
+        if (disclosure.isConnected && !disclosure.open && selection && selection.source === 'candidate' &&
+            edges.some(function (edge) { return edge.edge_id === selection.edgeId; })) closeEdgeDetail(false);
+      });
+      card.appendChild(disclosure);
       detail.appendChild(card);
     });
     if (entries.truncated) detail.appendChild(el('p', { class: 'hint', text: '仅展示前 ' + entries.cap + ' 个字段，请使用筛选收窄。' }));
@@ -1088,10 +1156,20 @@
         class: 'link is-' + (link.boundary === 'inferred' ? 'inferred' : 'observed'),
         'data-boundary': link.boundary,
         'data-edge-id': link.edge_id,
+        'data-evidence-source': 'graph',
+        role: 'button',
+        tabindex: '0',
+        'aria-controls': 'edge-detail',
+        'aria-label': '字段关联证据：' + F.ruleLabel(link.rule),
       });
       path.appendChild(UI.svgEl('title', { text: F.ruleLabel(link.rule) + ' / 可信程度：' + UI.confidenceLabel(link.confidence) }));
       path.addEventListener('click', function () {
-        loadEdgeDetail(link.edge_id);
+        toggleEdgeDetail(link.edge_id, 'graph');
+      });
+      path.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        toggleEdgeDetail(link.edge_id, 'graph');
       });
       svg.appendChild(path);
       svg.appendChild(UI.svgEl('circle', { cx: x2, cy: y2, r: 3.5, class: 'node-dot' }));
@@ -1105,17 +1183,37 @@
 
   function renderEdgeDetail() {
     var box = document.getElementById('edge-detail');
+    var selection = state.edgeSelection;
+    document.querySelectorAll('[data-evidence-source]').forEach(function (trigger) {
+      var expanded = Boolean(selection && trigger.dataset.edgeId === selection.edgeId);
+      trigger.setAttribute('aria-expanded', String(expanded));
+      if (trigger.dataset.evidenceSource === 'candidate') {
+        trigger.textContent = expanded ? '收起这条关联的证据' : '查看这条关联的证据';
+      }
+    });
     clear(box);
-    if (!state.edgeDetail) {
+    delete box.dataset.edgeId;
+    if (!selection) {
       box.appendChild(el('h3', { text: '单条边的证据详情' }));
-      box.appendChild(el('p', { class: 'hint', text: '点击流向图上的连线，查看数据来源、去向和关联依据。' }));
+      box.appendChild(el('p', { class: 'hint', text: '点击候选条目的证据按钮或字段图上的连线，查看关联依据。' }));
       return;
     }
-    var detail = state.edgeDetail;
+    box.dataset.edgeId = selection.edgeId;
+    function collapseButton() {
+      return el('button', { type: 'button', class: 'btn btn-small', text: '收起证据',
+        'aria-controls': 'edge-detail', onclick: function () { closeEdgeDetail(true); } });
+    }
+    box.appendChild(el('div', { class: 'block-head' }, [
+      el('h3', { text: '单条边的证据详情' }), collapseButton(),
+    ]));
+    if (!selection.detail) {
+      box.appendChild(el('p', { class: selection.error ? 'warn' : 'hint', role: 'status',
+        text: selection.error ? '读取这条关联的证据失败：' + selection.error : '正在读取关联证据…' }));
+      return;
+    }
+    var detail = selection.detail;
     var edge = detail.edge;
     var trace = detail.traceability;
-    box.dataset.edgeId = edge.edge_id;
-    box.appendChild(el('h3', { text: '单条边的证据详情' }));
     var assessment = (state.flows.sink_assessments || []).find(function (item) { return item.sink_event_id === edge.sink_event_id && item.sink_json_path === edge.sink_json_path; });
     var explanation = Insights.explanation(assessment || { decision: 'uncertain', candidates: [edge] });
     box.appendChild(el('p', { class: 'hint', text: explanation.label + '：' + explanation.text }));
@@ -1163,16 +1261,19 @@
       });
       box.appendChild(el('h4', { text: (side === 'source' ? '来源' : '去向') + ' MCP 请求 / 响应（可回溯）' }));
       box.appendChild(endpointList);
-      box.appendChild(details(maskedView() ? '脱敏预览' : '操作数据', [el('div', { class: 'raw-value', text: JSON.stringify(endpoint.payload_preview, null, 2) })]));
+      box.appendChild(keyedDetails('edge-preview:' + edge.edge_id + ':' + side, maskedView() ? '脱敏预览' : '操作数据',
+        [el('div', { class: 'raw-value', text: JSON.stringify(endpoint.payload_preview, null, 2) })], '收起预览'));
       box.appendChild(el('button', {
         type: 'button',
         class: 'btn btn-small',
+        dataset: { edgeReveal: side },
         text: (side === 'source' ? '查看来源数据' : '查看去向数据'),
         onclick: function () { openReveal(endpoint.payload_hint, endpoint.event_id, endpoint.json_path); },
       }));
     });
 
     box.appendChild(el('p', { class: 'hint', text: '跨运行串线自检：' + (trace.cross_run_check.ok ? '通过（0 条违规）' : '发现 ' + trace.cross_run_check.violations.length + ' 条违规') }));
+    box.appendChild(collapseButton());
   }
 
   /* ------------------------------------------------- ⑤ 一行边界摘要（不展开） */
@@ -1346,21 +1447,39 @@
     });
   }
 
-  /** @param {string} edgeId */
-  function loadEdgeDetail(edgeId) {
+  function closeEdgeDetail(restoreFocus) {
+    var selection = state.edgeSelection;
+    state.edgeSelection = null;
+    renderEdgeDetail();
+    if (!restoreFocus || !selection) return;
+    var trigger = Array.from(document.querySelectorAll('[data-evidence-source]')).find(function (node) {
+      return node.dataset.edgeId === selection.edgeId && node.dataset.evidenceSource === selection.source;
+    });
+    if (trigger && trigger.getClientRects().length) trigger.focus();
+  }
+
+  function toggleEdgeDetail(edgeId, source) {
     if (!state.selectedRun) return;
+    if (state.edgeSelection && state.edgeSelection.edgeId === edgeId) {
+      closeEdgeDetail(false);
+      return;
+    }
     var runKey = state.selectedRun;
+    var selection = { edgeId: edgeId, source: source, detail: null, error: null };
+    state.edgeSelection = selection;
+    renderEdgeDetail();
+    var panel = document.getElementById('edge-detail');
+    panel.scrollIntoView({ block: 'start', behavior: 'instant' });
     UI.fetchJson('/api/runs/' + encodeURIComponent(runKey) + '/edges/' + encodeURIComponent(edgeId))
       .then(function (detail) {
-        if (state.selectedRun !== runKey) return;
-        state.edgeDetail = detail;
+        if (state.edgeSelection !== selection || state.selectedRun !== runKey) return;
+        selection.detail = detail;
         renderEdgeDetail();
-        document.getElementById('edge-detail').scrollIntoView({ block: 'start', behavior: 'instant' });
       })
       .catch(function (error) {
-        var box = document.getElementById('edge-detail');
-        clear(box);
-        box.appendChild(el('p', { class: 'warn', text: '读取这条边的证据失败：' + error.message }));
+        if (state.edgeSelection !== selection || state.selectedRun !== runKey) return;
+        selection.error = error.message;
+        renderEdgeDetail();
       });
   }
 
@@ -1456,7 +1575,11 @@
    */
   function refreshMeta() {
     return UI.fetchJson('/api/meta').then(
-      function (meta) { state.meta = meta; },
+      function (meta) {
+        state.meta = meta;
+        var mode = document.getElementById('workspace-mode');
+        if (mode) mode.textContent = meta.demo_mode ? '虚构数据演示 · 当前未启动实时网关。' : '本机采集记录 · 到应用中心查看网关和应用的连接状态。';
+      },
       function () { state.meta = null; },
     );
   }
@@ -1476,7 +1599,7 @@
     }).then(function (snapshot) {
       if (!snapshot) return;
       if (snapshot.unchanged) return snapshot;
-      if (state.selectedRun !== snapshot.selectedRun) { state.edgeDetail = null; state.flowGroup = null; pages = {}; }
+      if (state.selectedRun !== snapshot.selectedRun) { state.edgeSelection = null; state.flowGroup = null; pages = {}; }
       state.runs = snapshot.runs;
       state.selectedRun = snapshot.selectedRun;
       state.timeline = snapshot.timeline;
@@ -1507,6 +1630,11 @@
     document.getElementById('copy-link').addEventListener('click', copyViewLink);
     document.getElementById('toggle-filters').addEventListener('click', function () {
       setFilterPanelOpen(!filterPanelOpen());
+    });
+    document.getElementById('field-graph-disclosure').addEventListener('toggle', function (event) {
+      var graph = event.currentTarget;
+      graph.firstElementChild.textContent = graph.open ? '收起完整字段图' : '展开完整字段图';
+      if (!graph.open && state.edgeSelection && state.edgeSelection.source === 'graph') closeEdgeDetail(false);
     });
     document.getElementById('reveal-cancel').addEventListener('click', function () {
       document.getElementById('reveal-dialog').close();

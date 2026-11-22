@@ -1,7 +1,7 @@
 /**
  * src/collector/store.js — SQLite 事件库（F1）
  *
- * 唯一真源：`相关实现`。本文件实现其中 runs / calls / events 三张表的读写。
+ * 唯一真源：`docs/design/schema.md`。本文件实现其中 runs / calls / events 三张表的读写。
  *
  * 设计要点：
  *   - `node:sqlite` 的 DatabaseSync（同步 API），WAL + busy_timeout + 写重试，
@@ -10,7 +10,7 @@
  *     持久化到 meta 表（键 `trace_write_failures`，CLI `trace stats` 可读出）；
  *   - upsert 使用 `COALESCE(?, 表.列)` 的单语句「补丁式」语义：
  *     calls 行的生命周期是「先写 request，再补 response」，后写只覆盖显式传入的列；
- *   - 返回的行对象使用**数据库原生 snake_case 列名**，与 相关实现 逐字一致。
+ *   - 返回的行对象使用**数据库原生 snake_case 列名**，与 docs/design/schema.md 逐字一致。
  */
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';

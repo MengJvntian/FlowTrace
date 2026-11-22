@@ -64,7 +64,7 @@ export const TRACE_USAGE = `用法: node bin/trace.js <命令> [选项]
   calls    --run <id>           调用表格：gateway_id / upstream_app / tool_name / status / 耗时
   timeline --run <id>           时间线：按时间排序的 request/response 成对视图（缺对用 !! 标出）
   show     --call <id>          原始证据：该调用的 request/response JSON
-  export   --run <id> --out <f> 审计导出（JSON 或 JSONL，含 schema_version；**默认未脱敏原文**，见下）
+  export   --run <id> --out <f> 审计导出（JSON 或 JSONL，含 schema_version，默认未脱敏原文）
   delete   --run <id>           按运行删除（calls + events + runs）
   vacuum                        压缩数据库文件
   stats                         统计（含采集失败计数 trace_write_failures）
@@ -79,20 +79,20 @@ export const TRACE_USAGE = `用法: node bin/trace.js <命令> [选项]
   --client-label <label>  runs 过滤
   --status <status>  calls 过滤（ok|tool_iserror|protocol_error|transport_error|timeout|validation_error）
   --format json|jsonl     export 输出格式（缺省按 --out 扩展名推断）
-  --mask                  export：导出**脱敏投影**（手机号/邮箱/令牌·密钥 → 占位符），产物 masked=true
-  --reveal                export：显式声明导出**未脱敏原文**（等于缺省行为，供脚本自证）；与 --mask 互斥
+  --mask                  export：导出脱敏投影（手机号/邮箱/令牌·密钥 → 占位符），产物 masked=true
+  --reveal                export：显式声明导出未脱敏原文（等于缺省行为，供脚本自证）；与 --mask 互斥
   --dry-run          delete 只预览不删除
 
-关于 export 的脱敏（与页面导出**不是**同一套保证，务必看清）：
-  1) 默认（不加开关）：写**未脱敏原文**（与库内一致），产物 masked=false —— CLI 是你本机主动发起的
-     审计导出，隐式脱敏会造成**静默数据失真**，因此本命令不替你脱敏。请自行保管并限期删除。
+关于 export 的脱敏（与页面导出不是同一套保证，务必看清）：
+  1) 默认（不加开关）：写未脱敏原文（与库内一致），产物 masked=false —— CLI 是你本机主动发起的
+     审计导出，隐式脱敏会造成静默数据失真，因此本命令不替你脱敏。请自行保管并限期删除。
   2) --mask：写脱敏投影，产物 masked=true；三处虚构样例（令牌/手机号/邮箱）在产物里均不可见。
-  3) --reveal：显式声明要原文（等价缺省）；与 --mask 同时给出是**用法错误**（退出码 2）。
-  4) 页面导出一律**默认脱敏**：GET /api/runs/<run>/export?format=json（masked=true）；
-     要页面侧原文必须 reveal=1&ack=1&reason=… 并写审计记录（相关实现/§8）。
+  3) --reveal：显式声明要原文（等价缺省）；与 --mask 同时给出是用法错误（退出码 2）。
+  4) 页面导出一律默认脱敏：GET /api/runs/<run>/export?format=json（masked=true）；
+     要页面侧原文必须 reveal=1&ack=1&reason=… 并写审计记录（docs/design/privacy.md §4/§8）。
   5) JSON 与 JSONL 两种形态都在元数据里带 masked / mask_mode，读者可直接核对。
 
-退出码（表达的是「命令执行结果」，**不表达数据质量**）：
+退出码（表达的是「命令执行结果」，不表达数据质量）：
   0  成功（即使数据有缺口，例如某次调用缺 response 事件）
   1  运行错误（库打不开、文件损坏、写文件失败）
   2  用法/参数错误（未知命令、缺必填参数、非法取值）
@@ -100,7 +100,7 @@ export const TRACE_USAGE = `用法: node bin/trace.js <命令> [选项]
 
 关于 timeline 的「缺对」：
   「request 没有配对的 response/error」是被观测数据的属性，不是命令失败，因此 timeline 缺对时
-  **退出码仍为 0**，并用两种方式表达：人读输出里的『!! 缺少 response/error』标记 + 『pairing: …』摘要行；
+  退出码仍为 0，并用两种方式表达：人读输出里的『!! 缺少 response/error』标记 + 『pairing: …』摘要行；
   脚本判定必须解析 --json 的 pairing.complete / pairing.calls_checked / pairing.ok /
   pairing.incomplete[] / pairing.orphan_events[]。禁止用退出码判断事件是否成对。`;
 
@@ -510,7 +510,7 @@ function cmdExport(argv) {
           mask_summary: payload.mask_summary,
           raw_notice: payload.masked
             ? null
-            : '未脱敏原文：请自行保管并限期删除；脱敏投影请用 --mask',
+            : '未脱敏原文：请自行保管并限期删除；脱敏投影请用 --mask（docs/design/privacy.md §8）',
           out: absolute,
           bytes,
           calls: payload.calls.length,

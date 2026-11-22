@@ -132,8 +132,7 @@ export function runRootCounts(registered, implicit) {
     },
     total: registered + implicit,
     note:
-      '两者是不同来源，必须分开计数：Gateway 采集默认**不建** runs 行，因此仅出现在 calls/events 的运行是正常现象，' +
-      '不是「缺登记」缺陷；页面同时显示两个数，不合并。',
+      '已登记任务和仅从调用记录识别到的任务分别计数。网关默认记录调用和事件，不建立单独的任务登记。',
   };
 }
 
@@ -360,7 +359,7 @@ export function apiTimeline(ctx, runKey, query) {
     pairing: timeline.pairing,
     pairing_legend: {
       complete: 'pairing.complete=true 表示每个 tools/call 都有 request 与 response|error。',
-      incomplete: 'pairing.incomplete[] 列出缺对调用；页面用 !! 标出，**不用 HTTP 状态码表达数据缺口**。',
+      incomplete: '缺少配对记录的调用列在 pairing.incomplete 中，页面用 !! 标记。HTTP 状态码表示接口请求是否成功。',
       calls_checked: 'pairing.calls_checked = 该运行的 calls 行数；pairing.ok = 其中成对的条数。',
     },
     collection: timeline.collection,
@@ -606,7 +605,7 @@ export function apiRaw(ctx, query, client = {}) {
   if (available.length === 0) {
     notFound(
       `事件 ${eventId} 没有保留原始载荷（原始数据采集可能已关闭，或 payload 被截断/排除）：` +
-        '页面不推断、不补全；请核对采集设置，确认是否保存了原始请求和响应。',
+        '请核对采集设置，确认是否保存了原始请求和响应。',
     );
   }
 
@@ -661,7 +660,7 @@ export function apiRaw(ctx, query, client = {}) {
     audit: { audit_id: entry.audit_id, at_utc: entry.at_utc, reason: entry.reason, persisted: false },
     warnings: [
       '本次访问已写入内存审计记录（页面「审计记录」区可见，进程重启即清空）。',
-      ctx.config.maskData === true ? '原文仅供本机查看，请妥善保管，避免通过截图或导出泄露。' : '个人工作台直接显示操作数据。',
+      ctx.config.maskData === true ? '原文仅供本机查看，请妥善保管。' : '个人工作台直接显示操作数据。',
       ctx.config.maskData === true ? '当前展示脱敏。' : '当前为个人工作台，数据直接显示。',
     ],
   };
@@ -786,6 +785,7 @@ export function apiMeta(ctx) {
     ok: true,
     generated_at_utc: nowIso,
     available_databases: availableDatabases,
+    demo_mode: Boolean(ctx.demoMode),
     view_key: createHash('sha256').update(ctx.config.dbPath).digest('hex').slice(0, 20),
     service: {
       name: 'mcp-cross-app-trace-web',
@@ -888,10 +888,9 @@ export function apiOps(ctx) {
       },
       {
         key: 'audit_export',
-        label: 'CLI 审计导出（**默认未脱敏原文**）',
+        label: 'CLI 审计导出（默认导出原始数据）',
         purpose:
-          '把该运行的 calls/events 快照写成文件。CLI 是用户本机主动发起的导出，因此**默认写未脱敏原文**' +
-          '（产物 masked=false，请自行保管并限期删除）；需要脱敏投影请加 --mask（产物 masked=true）。',
+          '将本任务的调用和事件保存到本机文件。默认导出原始数据，请妥善保管。需要脱敏时，在命令中加上 --mask。',
         command: `node bin/trace.js export --run <experiment_run_id> --out demo-data/tmp/audit-export.json --db "${db}"`,
         dry_run_command: `node bin/trace.js export --run <experiment_run_id> --out demo-data/tmp/audit-export.json --mask --db "${db}"`,
         cli_doc:

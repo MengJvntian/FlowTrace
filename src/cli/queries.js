@@ -8,11 +8,11 @@
  *   1. `runs` 表里显式登记的运行；
  *   2. 只在 calls/events 里出现 `experiment_run_id` 的运行（Gateway 采集时不会自动建 runs 行）。
  * 本模块把两者合并，并把「属于该运行」的语义固定为
- * `run_id / experiment_run_id 任一命中`（相关实现）。
+ * `run_id / experiment_run_id 任一命中`（docs/design/schema.md §7）。
  */
 import { fail } from './args.js';
 import { SCHEMA_VERSION } from '../shared/schemaversion.js';
-// 脱敏只允许有一个实现：复用 P3 展示层的 mask.js（相关实现 的机器可读唯一真源）。
+// 脱敏只允许有一个实现：复用 P3 展示层的 mask.js（docs/design/privacy.md 的机器可读唯一真源）。
 import { maskPayloadRow, newMaskStats } from '../web/mask.js';
 
 /** 未归属任何运行的记录在表格里的显示值。 */
@@ -275,7 +275,7 @@ export function buildTimeline(store, runKey, options = {}) {
 /**
  * 审计导出对象（JSON 形态）。JSONL 形态由调用方按行序列化。
  *
- * **脱敏语义（R-01 团队裁定，必须与 相关实现 一致）**：CLI 是**用户本机主动发起**的审计导出，
+ * **脱敏语义（R-01 团队裁定，必须与 docs/design/privacy.md §8 一致）**：CLI 是**用户本机主动发起**的审计导出，
  * 因此**默认写未脱敏原文**（隐式脱敏会造成静默数据失真，比原文更危险）；只有显式传 `mask: true`
  * （`--mask`）才走脱敏投影。产物**必须**带 `masked` 字段，让读者一眼看到本文件的真实形态。
  * 掩码规则复用 P3 展示层的唯一实现 `src/web/mask.js`（`maskPayloadRow()`），不另写一套。

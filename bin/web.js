@@ -221,7 +221,7 @@ function rawHttpProbe(port, options) {
  *
  * 这是沙箱内可复现的端到端验收（不依赖父子进程管道 stdio：服务与请求在同一个进程里完成，
  * 走的是真实 socket 与真实 HTTP 解析）。它**不**声称验证了「真实客户端经 Gateway 调用」，
- * 那一项属于沙箱外待用户执行（相关实现 的 B1–B4 与 §9）。
+ * 那一项属于沙箱外待用户执行（docs/design/privacy.md §0 的 B1–B4 与 §9）。
  *
  * @param {Record<string, any>} web
  * @param {{url: string, port: number, address: Record<string, any>}} info
@@ -465,7 +465,7 @@ async function runSelfCheck(web, info, config) {
     all_ok: failed.length === 0,
     boundary_statement:
       '自检覆盖「服务真实监听 + 真实 HTTP 请求 + 只读/隐私门禁」；不覆盖「真实 MCP 客户端经 Gateway 的调用链路」，' +
-      '应用连接须在实际客户端中通过受管路由使用。',
+      '后者必须由用户在沙箱外按 docs/testing/demo.md 执行。',
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   return report.all_ok ? 0 : 1;

@@ -1,4 +1,5 @@
 node_modules/
+/课程设计提交版/
 .npm-cache/
 .pnpm-store/
 __pycache__/
@@ -13,6 +14,7 @@ demo-data/
 *.sqlite*
 *.credential.xml
 credentials*/
+!/src/credentials/
 client_secret*.json
 token*.json
 *.connected.json

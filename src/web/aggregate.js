@@ -30,7 +30,7 @@ export const COLLECTION_STATES = Object.freeze([
   { state: 'unreadable', label: '原始数据采集：库不可读', detail: '文件存在但不是本平台的事件库，或无法以只读方式打开。' },
 ]);
 
-/** 数据流相关的 phase（与 相关实现 一致）。 */
+/** 数据流相关的 phase（与 docs/design/schema.md §4 一致）。 */
 const DATAFLOW_PHASES = Object.freeze(['request', 'response', 'error']);
 
 /**

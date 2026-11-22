@@ -65,9 +65,9 @@ function accountInfo(app, root) {
   return { configured: true, label: user && !['notion', 'gitee'].includes(user) ? user.replaceAll('&amp;', '&') : '已保存应用授权', verified_now: false };
 }
 export async function applicationStatus(ctx, { root = ROOT, fetchImpl = fetch, discover = discoverTools, live = false } = {}) {
-  const preferences = json(path.join(root, 'applications/preferences.json'), { disabled: [] });
+  const preferences = ctx.demoMode ? { disabled: [] } : json(path.join(root, 'applications/preferences.json'), { disabled: [] });
   const catalogue = readApplicationCatalog(path.join(root, 'applications')).filter(app => app.upstream && !app.status.startsWith('excluded-'));
-  const installed = json(path.join(root, 'applications/agent-routing/installed.json'), {});
+  const installed = ctx.demoMode ? {} : json(path.join(root, 'applications/agent-routing/installed.json'), {});
   const configuredBase = installed.targets?.find(t => t.codex)?.codex;
   const base = configuredBase ? new URL(configuredBase).origin : 'http://127.0.0.1:8790';
   // Only connect to local gateway addresses, never a URL from a tool schema.
@@ -88,7 +88,7 @@ export async function applicationStatus(ctx, { root = ROOT, fetchImpl = fetch, d
   async function worker() {
     while (queue.length) {
       const app = queue.shift(), endpoint = health?.upstreams.find(u => u.serverName === app.upstream.serverName && u.path === app.upstream.path);
-      const baseline = json(path.join(root, 'applications/agent-routing/tool-cache', app.id + '.json'), {});
+      const baseline = ctx.demoMode ? {} : json(path.join(root, 'applications/agent-routing/tool-cache', app.id + '.json'), {});
       let tools = baseline.tools || [], discovery = 'cached', error = null;
       if (live && endpoint?.upstream_ready && !preferences.disabled.includes(app.id)) {
         try { tools = await discover(base + '/codex' + app.upstream.path); discovery = 'live'; }
@@ -112,7 +112,7 @@ export async function applicationStatus(ctx, { root = ROOT, fetchImpl = fetch, d
     }
   }
   await Promise.all([worker(), worker(), worker()]);
-  return { ok: true, gateway_online: Boolean(health), gateway: base, mode: readMonitoringMode(path.join(root, 'applications/agent-routing/monitoring.json')),
+  return { ok: true, demo: Boolean(ctx.demoMode), gateway_online: Boolean(health), gateway: base, mode: ctx.demoMode ? { enforce: true } : readMonitoringMode(ctx.monitoringFile ?? path.join(root, 'applications/agent-routing/monitoring.json')),
     applications: rows.sort((a, b) => a.name.localeCompare(b.name)), checked_at: new Date().toISOString(),
-    note: ctx.demoMode ? '虚构数据演示只使用虚构记录，不读取本机真实账户，也不探测真实 Gateway。' : '账户为本机保存配置，不代表本次身份验证；连接、工具发现和业务成功分别展示。字段数为历史实际提取结果，不是全工具覆盖率。' };
+    note: ctx.demoMode ? '虚构数据演示只使用示例记录，不读取本机真实账户，也不探测真实 Gateway。' : '账户为本机保存配置，不代表本次身份验证；连接、工具发现和业务成功分别展示。字段数为历史实际提取结果，不是全工具覆盖率。' };
 }

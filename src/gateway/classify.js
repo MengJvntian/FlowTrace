@@ -1,7 +1,7 @@
 /**
  * src/gateway/classify.js — 状态归类与参数预校验（S1）
  *
- * 六类 status（相关实现）在 Gateway 侧的判定入口：
+ * 六类 status（docs/design/schema.md §3）在 Gateway 侧的判定入口：
  *
  * | status             | 判定条件                                                        |
  * |--------------------|-----------------------------------------------------------------|
@@ -38,7 +38,7 @@ export const GATEWAY_ERROR_CODES = Object.freeze({
   UPSTREAM_TIMEOUT: -32011,
 });
 
-/** status → error_kind 的对应（相关实现）。 */
+/** status → error_kind 的对应（docs/design/schema.md §3）。 */
 export const ERROR_KIND_BY_STATUS = Object.freeze({
   ok: null,
   tool_iserror: 'iserror',

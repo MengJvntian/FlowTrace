@@ -41,6 +41,10 @@
       </div>
     </header>
 
+    <section class="block" aria-label="首次使用" id="getting-started">
+      <p id="workspace-mode" role="status">正在确认查看模式…</p>
+      <details><summary>首次使用</summary><p>先选择任务，再查看调用时间线，最后点击字段流向查看关联证据。</p><p>打开<a href="/applications.html">应用中心</a>，选择应用并查看绑定教程；启动实时服务后，按教程准备 Agent 的可选连接，重载客户端，再发起第一次调用。也可先用默认 Mock 邮件和日历，无需真实账户。</p></details>
+    </section>
     <!-- 一行紧凑工具条：筛选折叠开关 + 生效条件 + 复制深链 + 生命周期小字（状态信息降级为一行小字） -->
     <div class="toolbar" id="filter-banner" data-active="no">
       <button id="toggle-filters" type="button" class="btn btn-small" aria-expanded="false" aria-controls="filter-panel">筛选</button>
@@ -165,7 +169,7 @@
         </div>
         <div id="app-flow-groups" class="app-flow-groups" aria-label="按应用查看数据流"></div>
         <div id="app-flow-detail" class="app-flow-detail"></div>
-        <details class="field-graph-disclosure" data-detail-key="field-graph"><summary>展开完整字段图</summary>
+        <details class="field-graph-disclosure" data-detail-key="field-graph" id="field-graph-disclosure"><summary>展开完整字段图</summary>
           <div class="svg-wrap" id="flows-svg-wrap"></div>
         </details>
         <div class="card" id="edge-detail"></div>

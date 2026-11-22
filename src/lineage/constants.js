@@ -1,8 +1,8 @@
 /**
  * src/lineage/constants.js — P2 字段级关联的机器可读枚举（L1）
  *
- * 与 相关实现 是同一契约的两面：文档是人类可读唯一真源，本文件是常量。
- * 任何规则名/置信级别/判定值的改动必须同时改 相关实现 与本文件。
+ * 与 docs/design/lineage.md 是同一契约的两面：文档是人类可读唯一真源，本文件是常量。
+ * 任何规则名/置信级别/判定值的改动必须同时改 docs/design/lineage.md 与本文件。
  */
 
 /** 值类型（规范化后的语义类型；与 JSON 原生类型分开记录，见 `json_type`）。 */
@@ -71,7 +71,7 @@ export const OBSERVED_RULES = Object.freeze([RULE.EXACT, RULE.LITERAL_FRAGMENT, 
 /** inferred 表示方式下允许出现的规则。 */
 export const INFERRED_RULES = Object.freeze([RULE.DATETIME_SPLIT, RULE.DATETIME_MERGE]);
 
-/** 置信级别（定义见 相关实现）。 */
+/** 置信级别（定义见 docs/design/lineage.md §3）。 */
 export const CONFIDENCE = Object.freeze({
   HIGH: 'high',
   MEDIUM: 'medium',
@@ -122,5 +122,5 @@ export const TOOL_ACTION = Object.freeze({
   UNKNOWN: 'unknown',
 });
 
-/** 数据流判定只考虑这三种 phase（相关实现）。 */
+/** 数据流判定只考虑这三种 phase（docs/design/schema.md §4）。 */
 export const DATAFLOW_PHASES = Object.freeze(['request', 'response', 'error']);

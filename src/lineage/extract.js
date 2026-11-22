@@ -5,7 +5,7 @@
  * 输出：`source_fields`（读应用响应的字段）与 `sink_fields`（写应用请求的字段），
  * 每个字段保留 **JSON 路径 + 值类型 + 规范化值 + 证据**，以及完整的排除诊断。
  *
- * 角色判定（与 相关实现 逐字一致）：
+ * 角色判定（与 docs/design/lineage.md §2.2 逐字一致）：
  *   - source（读侧）：`phase=response` 且该事件 `status=ok` 且工具动作=read；
  *   - sink（写侧）：`phase=request` 且工具动作=write 且该次调用的**终态为 ok**；
  *   - 其余事件一律排除，并写明原因（不静默丢弃任何事件）。
@@ -37,7 +37,7 @@ const CONTRADICTION_SEMANTICS = Object.freeze([
   SEMANTIC.EMAIL,
 ]);
 
-/** 文本里可识别的值（模式与优先级见 相关实现）。 */
+/** 文本里可识别的值（模式与优先级见 docs/design/lineage.md §2.1）。 */
 const TEXT_PATTERNS = Object.freeze([
   {
     name: 'datetime',
@@ -147,7 +147,7 @@ function jsonTypeOf(value) {
 }
 
 /**
- * 解析事件载荷文本；显式识别截断信封（相关实现）。
+ * 解析事件载荷文本；显式识别截断信封（docs/design/schema.md §5.3）。
  * @param {string | null | undefined} text
  * @returns {{ok: true, value: *} | {ok: false, reason: string, detail?: string}}
  */
@@ -443,7 +443,7 @@ const REPRESENTATION_PRIORITY = Object.freeze({ structured: 0, text: 1 });
 /**
  * 同一事件内合并字段。
  *
- * 两种分组方式（相关实现）：
+ * 两种分组方式（docs/design/lineage.md §2.1）：
  *   - 读侧（source）按**规范化值**合并：同一个值在该响应里可能同时有结构化表示与文本表示
  *     （甚至两个同值不同名的叶子），它们属于同一个来源，不能算成多个候选来源；
  *   - 写侧（sink）按**JSON 路径**分组：每个写入参数各自是一条边，必须保留路径级粒度。

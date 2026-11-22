@@ -1,7 +1,7 @@
 /**
  * src/shared/json.js — JSON 解析、载荷归一化、截断与摘要提取（F1）
  *
- * 契约（相关实现）：
+ * 契约（docs/design/schema.md §5）：
  *   1. 载荷超过 `maxBytes`（默认 256 KiB，Gateway 用 --max-payload-bytes 覆盖）时**不丢事件**：
  *      只存「截断信封 + 结构摘要 + 原始字节数 + sha256 摘要」，并用 truncated=1 标记；
  *   2. 内容块（MCP content blocks）逐块提取 `type / size_bytes / summary`；

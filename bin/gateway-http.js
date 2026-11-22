@@ -12,7 +12,7 @@
  *   - 客户端 ↔ Gateway：**HTTP**，不需要管道（沙箱内也能跑）；
  *   - Gateway ↔ 上游：**仍是 stdio 管道 spawn 独立子进程**，因此**运行 Gateway 的进程必须有管道权限**。
  *     在禁管道沙箱里，Gateway 自身作为「被 DSH 拉起的子进程」时，它 spawn 上游仍会被拒（实测 EPERM）；
- *     这种环境必须把 Gateway 放到**沙箱外的普通终端**里启动（见 相关实现「DSH 走 HTTP 传输」）。
+ *     这种环境必须把 Gateway 放到**沙箱外的普通终端**里启动（见 docs/testing/TEST_RUNBOOK.md「DSH 走 HTTP 传输」）。
  *
  * 纪律（与 bin/gateway.js 一致）：
  *   - 全部日志/诊断走 **stderr**（HTTP 模式下 stdout 不作协议通道，但仍保持同一约定，便于两种模式共用解析脚本）；

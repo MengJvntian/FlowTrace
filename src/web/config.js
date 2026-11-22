@@ -10,7 +10,7 @@
  * | `--port <n>` | `TRACE_WEB_PORT` | `8787` | `0` = 由系统分配空闲端口（测试与自检用） |
  * | `--retention-days <n>` | `TRACE_RETENTION_DAYS` | `30` | 保留期天数；`0` = 不启用保留期过滤 |
  * | `--retention-mode <m>` | `TRACE_RETENTION_MODE` | `active` | 缺省列表模式：active / all / expired |
- * | `--allow-raw[=bool]` | `TRACE_WEB_ALLOW_RAW` | `true` | 是否允许受控查看原文（每次访问都进审计日志，见 相关实现） |
+ * | `--allow-raw[=bool]` | `TRACE_WEB_ALLOW_RAW` | `true` | 是否允许受控查看原文（每次访问都进审计日志，见 docs/design/privacy.md） |
  * | `--allow-non-loopback` | `TRACE_WEB_ALLOW_NON_LOOPBACK` | `false` | 允许绑定非回环地址（默认拒绝，隐私边界） |
  * | `--audit-max <n>` | `TRACE_WEB_AUDIT_MAX` | `200` | 页面内审计日志（环形缓冲）条数上限 |
  * | `--preview-chars <n>` | `TRACE_WEB_PREVIEW_CHARS` | `4000` | 时间线/证据里的脱敏载荷预览上限 |
@@ -263,7 +263,7 @@ export function resolveWebConfig(argv, env = process.env, options = {}) {
   if (!isLoopbackHost(host) && !allowNonLoopback) {
     throw new WebConfigError(
       `拒绝绑定非回环地址 ${JSON.stringify(rawHost)}：本页面默认只服务本机（隐私边界）。` +
-        '确实需要时显式加 --allow-non-loopback（或 TRACE_WEB_ALLOW_NON_LOOPBACK=true），并在 相关实现 记录。',
+        '确实需要时显式加 --allow-non-loopback（或 TRACE_WEB_ALLOW_NON_LOOPBACK=true），并在 docs/design/privacy.md 记录。',
     );
   }
 

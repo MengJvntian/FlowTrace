@@ -244,7 +244,7 @@ export function evaluateRunConsistency(input) {
       calls.length > 0 && calls.every((call) => call.client_label === input.clientLabel),
       input.clientLabel,
       [...new Set(calls.map((call) => call.client_label))],
-      'client_label 用于标注调用来源（deterministic / codex / deepseek_harness）',
+      'client_label 是验收要求的确定性标签（deterministic / codex / deepseek_harness）',
     ),
   );
   checks.push(

@@ -7,7 +7,7 @@
  *      `phone=13812345678`（计划书要求的固定测试记录）；
  *   3. 文本表示与 `structuredContent` 表示**分别构造**，两者默认一致；
  *      不一致模式（`inconsistent`）只替换 `structuredContent.phone`，用于测试
- *      「结构化内容与文本内容不一致」的检测路径（见 相关实现 与 L1 任务）。
+ *      「结构化内容与文本内容不一致」的检测路径（见 docs/design/schema.md §5 与 L1 任务）。
  */
 import process from 'node:process';
 

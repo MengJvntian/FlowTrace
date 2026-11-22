@@ -2,7 +2,7 @@
  * src/gateway/collector.js — 采集写入层（S1）
  *
  * 职责：把「一次 tools/call」（请求 → 结果/异常）与「摘要事件 / 生命周期事件」
- * 变成 相关实现 定义的行，交给注入的存储（真实 `TraceStore` 或测试桩）。
+ * 变成 docs/design/schema.md 定义的行，交给注入的存储（真实 `TraceStore` 或测试桩）。
  *
  * 关键约束：
  *   - 采集与转发**解耦**：任何写入失败只计数 + 写 stderr，绝不抛出、绝不中断转发；

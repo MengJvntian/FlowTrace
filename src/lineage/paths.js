@@ -1,7 +1,7 @@
 /**
  * src/lineage/paths.js — P2 JSON 路径提取与格式化（L1）
  *
- * 路径记法（相关实现）：
+ * 路径记法（docs/design/lineage.md §2.1）：
  *   - 对象键：`a.b`（键名符合 `/^[A-Za-z_$][A-Za-z0-9_$]*$/` 时用点号）；
  *     否则用 JSON 引号段：`a["k.with.dots"]`；
  *   - 数组元素：`a[0]`；
@@ -16,7 +16,7 @@
 /** 点号记法允许的键名。 */
 export const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
-/** 逐叶子遍历时默认跳过的协议/控制键（记录在 相关实现）。 */
+/** 逐叶子遍历时默认跳过的协议/控制键（记录在 docs/design/lineage.md §2.1）。 */
 export const DEFAULT_SKIP_KEYS = Object.freeze([
   'jsonrpc',
   'id',

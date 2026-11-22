@@ -5,7 +5,7 @@
  *   /api/ops（受控运维命令）
  *   /api/audit（受控访问记录）
  *   /api/runs?retention=all（每个任务的保留期状态与计数口径）
- *   /api/runs/:id/flows（能力边界原文、散列用途、指标限定语、覆盖度明细、诊断计数）
+ *   /api/runs/:id/flows（写入检查结果与诊断）
  * 只读语义不变：全部为 GET；改库动作只显示命令原文，不代执行。
  */
 (function () {
@@ -277,7 +277,7 @@
     });
   }
 
-  /* ------------------------------------------------- 边界原文 / 覆盖度 / 诊断 */
+  /* ------------------------------------------------- 分析说明 / 写入检查 / 诊断 */
 
   function renderBoundaryDetail() {
     var prose = document.getElementById('boundaries-prose');
@@ -290,28 +290,24 @@
     clear(excludedWrap);
     var flows = state.flows;
     if (!flows) {
-      prose.textContent = '正在读取本任务的边界与诊断…';
+      prose.textContent = '正在读取本次任务的分析结果…';
       return;
     }
-    var list = el('ul');
-    (flows.boundaries_text || []).forEach(function (line) { list.appendChild(el('li', { text: line })); });
-    prose.appendChild(el('p', { text: '能力边界（L1 原文）：' }));
-    prose.appendChild(list);
-    prose.appendChild(el('p', { text: '散列用途（L1 原文）：' + flows.hash_policy }));
-    prose.appendChild(el('p', { text: '指标限定语：' + flows.metric_note }));
-    prose.appendChild(el('p', { class: 'hint', text: '跨运行串线自检：' + (flows.cross_run_check.ok ? '通过（0 条违规）' : '发现 ' + flows.cross_run_check.violations.length + ' 条违规') }));
+    prose.appendChild(el('p', { text: '字段分析使用本任务中经过网关、调用成功且保留了可读请求和结果的记录。失败或缺少数据的调用仍可在时间线查看。' }));
+    prose.appendChild(el('p', { text: '关联根据字段内容和格式判断。候选来源不明确时会单独标记，供你查看并核对。' }));
+    if (!flows.cross_run_check.ok) {
+      prose.appendChild(el('p', { class: 'warn', text: '发现 ' + flows.cross_run_check.violations.length + ' 条跨任务关联，请核对对应记录。' }));
+    }
 
-    var statements = el('ul');
-    (flows.coverage.statements || []).forEach(function (statement) { statements.appendChild(el('li', { text: '原文措辞：' + statement })); });
-    if (statements.childNodes.length === 0) statements.appendChild(el('li', { text: '（本次没有产生「未在已观测写入请求中发现…」的措辞）' }));
-    coverage.appendChild(el('p', { text: '已观测写入请求数 = ' + flows.coverage.observed_write_request_count + '；敏感来源字段 = ' + flows.coverage.sensitive_source_fields }));
-    coverage.appendChild(statements);
+    coverage.appendChild(el('p', { text: '本任务记录了 ' + flows.coverage.observed_write_request_count + ' 次写入请求，识别到 ' + flows.coverage.sensitive_source_fields + ' 个敏感来源字段。' }));
     var notFound = el('ul');
     (flows.coverage.not_found_in_observed_writes || []).forEach(function (item) {
-      notFound.appendChild(el('li', { class: 'mono', text: item.statement + '　类别：' + item.label + '　来源路径：' + item.source_json_path + '　值：' + text(item.value_masked) }));
+      notFound.appendChild(el('li', { text: item.statement + '。来源字段：' + item.source_json_path + '，值：' + text(item.value_masked) }));
     });
-    if (notFound.childNodes.length > 0) coverage.appendChild(notFound);
-    if (flows.coverage.inference_note) coverage.appendChild(el('p', { class: 'hint', text: flows.coverage.inference_note }));
+    if (notFound.childNodes.length > 0) {
+      coverage.appendChild(notFound);
+      coverage.appendChild(el('p', { class: 'hint', text: '检查结果仅针对本任务中已记录的写入。' }));
+    }
 
     diagnostics.appendChild(el('p', { text: '排除原因计数：' + JSON.stringify(flows.diagnostics.excluded_by_reason) }));
     diagnostics.appendChild(el('p', { text: '计数器：' + JSON.stringify(flows.diagnostics.counters) }));

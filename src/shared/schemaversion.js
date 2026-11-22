@@ -1,9 +1,9 @@
 /**
  * src/shared/schemaversion.js — 事件 schema 版本与枚举（F1）
  *
- * 本文件与 `相关实现` 是**同一契约的两面**：schema.md 是人类可读唯一真源，
+ * 本文件与 `docs/design/schema.md` 是**同一契约的两面**：schema.md 是人类可读唯一真源，
  * 本文件是机器可读常量。任何字段名/枚举值的改动必须同时改两处，
- * 并升级 `SCHEMA_VERSION`（见 相关实现「变更流程」）。
+ * 并升级 `SCHEMA_VERSION`（见 docs/design/schema.md §8「变更流程」）。
  */
 
 /** 当前事件 schema 版本（写入每条 runs/calls/events 记录的 schema_version 列）。 */
@@ -13,7 +13,7 @@ export const SCHEMA_VERSION = '1.0.0';
 export const SUPPORTED_SCHEMA_VERSIONS = Object.freeze(['1.0.0']);
 
 /**
- * 规范中映射的 status 枚举（相关实现）。
+ * 规范中映射的 status 枚举（docs/design/schema.md §4）。
  * 语义严格区分，禁止把「上游返回 isError」写成 protocol_error，反之亦然。
  */
 export const STATUS = Object.freeze({
@@ -60,7 +60,7 @@ export const PHASE = Object.freeze({
 /** 规范 phase 值。 */
 export const PHASE_VALUES = Object.freeze(Object.values(PHASE));
 
-/** transport 取值（相关实现）。 */
+/** transport 取值（docs/design/schema.md §4）。 */
 export const TRANSPORT = Object.freeze({
   STDIO: 'stdio',
   STREAMABLE_HTTP: 'streamable-http',
@@ -84,7 +84,7 @@ export const KNOWN_MCP_PROTOCOL_VERSIONS = Object.freeze([
 
 /**
  * 计划书 §4 要求「逐字覆盖」的最小字段集（17 项）。
- * 相关实现 给出每一项落在哪张表/哪一列，并有测试兜底（tests/store.test.js）。
+ * docs/design/schema.md §3 给出每一项落在哪张表/哪一列，并有测试兜底（tests/store.test.js）。
  */
 export const MINIMAL_FIELDS = Object.freeze([
   'event_id',
